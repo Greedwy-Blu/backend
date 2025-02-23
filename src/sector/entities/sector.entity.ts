@@ -1,9 +1,14 @@
 // src/entities/sector.entity.ts
 import { Entity, PrimaryKey, Property, OneToMany, Collection } from '@mikro-orm/core';
 import { SectorConfig } from './sector-config.entity';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
 export class Sector {
+  @ApiProperty({
+    description: 'Nome do setor',
+    example: 'Usinagem',
+  })
   @PrimaryKey()
   id!: number;
 

@@ -12,8 +12,14 @@ export class Gestao {
   name!: string; // Nome do gestor
 
   @Property()
-  department!: string; // Departamento do gestor (ex.: Produção, Qualidade)
+  department!: string; // Departamento do gestor
 
   @Property()
-  role!: string; // Cargo do gestor (ex.: Gerente de Produção, Gerente de Qualidade)
+  role!: string; // Cargo do gestor
+
+  @Property()
+  createdAt: Date = new Date(); // Data de criação
+
+  @Property({ onUpdate: () => new Date() })
+  updatedAt: Date = new Date(); // Data de atualização
 }

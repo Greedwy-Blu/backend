@@ -1,25 +1,42 @@
 // src/entities/etapa.entity.ts
 import { Entity, PrimaryKey, Property, ManyToOne } from '@mikro-orm/core';
 import { Order } from './order.entity';
-import { Funcionario } from '../../colaborador/entities/employee.entity';
+import { Funcionario } from '../../colaborador/entities/funcionario.entity';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
 export class Etapa {
   @PrimaryKey()
+  @ApiProperty({ description: 'ID único da etapa', example: 1 })
   id!: number;
 
   @Property()
-  nome!: string; // Nome da etapa (ex.: corte, montagem, pintura)
+  @ApiProperty({ description: 'Nome da etapa', example: 'Corte' })
+  nome!: string;
 
   @ManyToOne(() => Order)
-  order!: Order; // Pedido associado
+  @ApiProperty({ description: 'Pedido associado', type: () => Order })
+  order!: Order;
 
   @ManyToOne(() => Funcionario)
-  funcionario!: Funcionario; // Funcionário responsável
+  @ApiProperty({ description: 'Funcionário responsável', type: () => Funcionario })
+  funcionario!: Funcionario;
 
   @Property({ nullable: true })
-  inicio?: Date; // Horário de início da etapa
+  @ApiProperty({ description: 'Horário de início da etapa', example: '2023-10-01T12:00:00Z', required: false })
+  inicio?: Date;
 
   @Property({ nullable: true })
-  fim?: Date; // Horário de término da etapa
+  @ApiProperty({ description: 'Horário de término da etapa', example: '2023-10-01T14:00:00Z', required: false })
+  fim?: Date;
+
+  // Método para iniciar a etapa
+  iniciarEtapa() {
+    this.inicio = new Date();
+  }
+
+  // Método para finalizar a etapa
+  finalizarEtapa() {
+    this.fim = new Date();
+  }
 }

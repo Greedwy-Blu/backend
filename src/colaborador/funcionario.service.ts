@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository, EntityManager } from '@mikro-orm/core';
-import { Funcionario } from './entities/employee.entity';
+import { EntityRepository } from '@mikro-orm/core';
+import { EntityManager } from '@mikro-orm/core';
+import { Funcionario } from './entities/funcionario.entity';
 import { CreateFuncionarioDto } from './dto/create-funcionario';
 import { UpdateFuncionarioDto } from './dto/update-funcionario';
 
@@ -10,12 +11,22 @@ export class FuncionarioService {
   constructor(
     @InjectRepository(Funcionario)
     private readonly funcionarioRepository: EntityRepository<Funcionario>,
-    private readonly em: EntityManager, // Injete o EntityManager
+    private readonly em: EntityManager,
   ) {}
 
   async create(createFuncionarioDto: CreateFuncionarioDto): Promise<Funcionario> {
-    const funcionario = this.funcionarioRepository.create(createFuncionarioDto);
-    await this.em.persistAndFlush(funcionario); // Use o EntityManager para persistir e sincronizar
+    // Cria uma nova instância da entidade Funcionario
+    const funcionario = new Funcionario();
+    
+    // Atribui os valores do DTO à entidade
+    funcionario.code = createFuncionarioDto.code;
+    funcionario.nome = createFuncionarioDto.nome;
+    funcionario.cargo = createFuncionarioDto.cargo;
+    funcionario.salario = createFuncionarioDto.salario;
+
+    // Persiste e sincroniza a entidade com o banco de dados
+    await this.em.persistAndFlush(funcionario);
+
     return funcionario;
   }
 
@@ -26,7 +37,7 @@ export class FuncionarioService {
   async findOne(id: number): Promise<Funcionario> {
     const funcionario = await this.funcionarioRepository.findOne(id);
     if (!funcionario) {
-      throw new NotFoundException('Employee not found');
+      throw new NotFoundException('Funcionário não encontrado');
     }
     return funcionario;
   }
@@ -34,26 +45,31 @@ export class FuncionarioService {
   async update(id: number, updateFuncionarioDto: UpdateFuncionarioDto): Promise<Funcionario> {
     const funcionario = await this.funcionarioRepository.findOne(id);
     if (!funcionario) {
-      throw new NotFoundException('Employee not found');
+      throw new NotFoundException('Funcionário não encontrado');
     }
 
-    if (updateFuncionarioDto.code) {
+    if (updateFuncionarioDto.code !== undefined) {
       funcionario.code = updateFuncionarioDto.code;
     }
-    if (updateFuncionarioDto.name) {
-      funcionario.name = updateFuncionarioDto.name;
+    if (updateFuncionarioDto.nome !== undefined) {
+      funcionario.nome = updateFuncionarioDto.nome;
+    }
+    if (updateFuncionarioDto.cargo !== undefined) {
+      funcionario.cargo = updateFuncionarioDto.cargo;
+    }
+    if (updateFuncionarioDto.salario !== undefined) {
+      funcionario.salario = updateFuncionarioDto.salario;
     }
 
-    await this.em.flush(); // Use o EntityManager para sincronizar as alterações
+    await this.em.flush();
     return funcionario;
   }
 
   async remove(id: number): Promise<void> {
     const funcionario = await this.funcionarioRepository.findOne(id);
     if (!funcionario) {
-      throw new NotFoundException('Funcionario not found');
+      throw new NotFoundException('Funcionário não encontrado');
     }
-
-    await this.em.removeAndFlush(funcionario); // Use o EntityManager para remover e sincronizar
+    await this.em.removeAndFlush(funcionario);
   }
 }

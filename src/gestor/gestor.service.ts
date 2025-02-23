@@ -1,7 +1,7 @@
-// src/gestao/gestao.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository, EntityManager } from '@mikro-orm/core';
+import { EntityRepository } from '@mikro-orm/core';
+import { EntityManager } from '@mikro-orm/core';
 import { Gestao } from './entities/gestor.entity';
 import { CreateGestorDto } from './dto/create-gestor.dto';
 import { UpdateGestorDto } from './dto/update-gestor.dto';
@@ -15,8 +15,17 @@ export class GestaoService {
   ) {}
 
   async create(createGestaoDto: CreateGestorDto): Promise<Gestao> {
-    const gestao = this.gestaoRepository.create(createGestaoDto);
-    await this.em.persistAndFlush(gestao); // Use o EntityManager para persistir e sincronizar
+    // Cria uma nova instância da entidade Gestao
+    const gestao = new Gestao();
+    
+    // Atribui os valores do DTO à entidade
+    gestao.code = createGestaoDto.code;
+    gestao.name = createGestaoDto.name;
+    gestao.department = createGestaoDto.department;
+    gestao.role = createGestaoDto.role;
+
+    // Persiste e sincroniza a entidade com o banco de dados
+    await this.em.persistAndFlush(gestao);
     return gestao;
   }
 
@@ -38,16 +47,17 @@ export class GestaoService {
       throw new NotFoundException('Gestão não encontrada');
     }
 
-    if (updateGestaoDto.code) {
+    // Atualiza apenas os campos fornecidos
+    if (updateGestaoDto.code !== undefined) {
       gestao.code = updateGestaoDto.code;
     }
-    if (updateGestaoDto.name) {
+    if (updateGestaoDto.name !== undefined) {
       gestao.name = updateGestaoDto.name;
     }
-    if (updateGestaoDto.department) {
+    if (updateGestaoDto.department !== undefined) {
       gestao.department = updateGestaoDto.department;
     }
-    if (updateGestaoDto.role) {
+    if (updateGestaoDto.role !== undefined) {
       gestao.role = updateGestaoDto.role;
     }
 
@@ -60,7 +70,6 @@ export class GestaoService {
     if (!gestao) {
       throw new NotFoundException('Gestão não encontrada');
     }
-
     await this.em.removeAndFlush(gestao); // Use o EntityManager para remover e sincronizar
   }
 }

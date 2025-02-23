@@ -13,8 +13,10 @@ import { ProductsModule } from './produto/produto.module';
 import { SectorsModule } from './sector/sector.module';
 import { AuthModule } from './auth/auth.module';
 
+import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     // Configuração do MikroORM com o PostgreSQL
     MikroOrmModule.forRoot({
       ...config, // Use a configuração importada
