@@ -1,0 +1,1379 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/orders": {
+      "post": {
+        "operationId": "OrdersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pedido criado com sucesso."
+          }
+        },
+        "summary": "Criar um novo pedido",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/start-tracking": {
+      "post": {
+        "operationId": "OrdersController_startTracking",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rastreamento iniciado com sucesso."
+          }
+        },
+        "summary": "Iniciar o rastreamento de uma ordem",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/end-tracking/{id}": {
+      "post": {
+        "operationId": "OrdersController_endTracking",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do rastreamento",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rastreamento finalizado com sucesso."
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderTracking"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Finalizar o rastreamento de uma ordem",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/report/{id}": {
+      "get": {
+        "operationId": "OrdersController_getOrderReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da ordem",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Relatório retornado com sucesso."
+          }
+        },
+        "summary": "Obter relatório de uma ordem",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/{id}/etapas": {
+      "post": {
+        "operationId": "OrdersController_createEtapa",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da ordem",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "example": "Corte"
+                  },
+                  "funcionarioCode": {
+                    "type": "string",
+                    "example": "FUNC001"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Etapa criada com sucesso."
+          }
+        },
+        "summary": "Criar uma nova etapa para uma ordem",
+        "tags": [
+          "orders"
+        ]
+      },
+      "get": {
+        "operationId": "OrdersController_listEtapasByOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da ordem",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Etapas retornadas com sucesso."
+          }
+        },
+        "summary": "Listar etapas de uma ordem",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/etapas/{id}/iniciar": {
+      "post": {
+        "operationId": "OrdersController_startEtapa",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da etapa",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Etapa iniciada com sucesso."
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Etapa"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Iniciar uma etapa",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/etapas/{id}/finalizar": {
+      "post": {
+        "operationId": "OrdersController_endEtapa",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da etapa",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Etapa finalizada com sucesso."
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Etapa"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Finalizar uma etapa",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/{id}/atualizar-status": {
+      "post": {
+        "operationId": "OrdersController_atualizarStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da ordem",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "em_andamento"
+                  },
+                  "motivoId": {
+                    "type": "number",
+                    "example": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status atualizado com sucesso."
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Atualizar o status de uma ordem",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/funcionario": {
+      "post": {
+        "operationId": "FuncionarioController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFuncionarioDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Funcionário criado com sucesso."
+          },
+          "400": {
+            "description": "Dados inválidos."
+          }
+        },
+        "summary": "Criar um novo funcionário",
+        "tags": [
+          "funcionario"
+        ]
+      },
+      "get": {
+        "operationId": "FuncionarioController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lista de funcionários retornada com sucesso."
+          }
+        },
+        "summary": "Listar todos os funcionários",
+        "tags": [
+          "funcionario"
+        ]
+      }
+    },
+    "/funcionario/{id}": {
+      "get": {
+        "operationId": "FuncionarioController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do funcionário",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Funcionário encontrado."
+          },
+          "404": {
+            "description": "Funcionário não encontrado."
+          }
+        },
+        "summary": "Obter um funcionário pelo ID",
+        "tags": [
+          "funcionario"
+        ]
+      },
+      "put": {
+        "operationId": "FuncionarioController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do funcionário",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFuncionarioDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Funcionário atualizado com sucesso."
+          },
+          "404": {
+            "description": "Funcionário não encontrado."
+          }
+        },
+        "summary": "Atualizar um funcionário pelo ID",
+        "tags": [
+          "funcionario"
+        ]
+      },
+      "delete": {
+        "operationId": "FuncionarioController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do funcionário",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Funcionário removido com sucesso."
+          },
+          "404": {
+            "description": "Funcionário não encontrado."
+          }
+        },
+        "summary": "Remover um funcionário pelo ID",
+        "tags": [
+          "funcionario"
+        ]
+      }
+    },
+    "/gestao": {
+      "post": {
+        "operationId": "GestaoController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGestorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Gestor criado com sucesso."
+          },
+          "403": {
+            "description": "Acesso negado."
+          }
+        },
+        "summary": "Criar um novo gestor",
+        "tags": [
+          "gestao"
+        ]
+      },
+      "get": {
+        "operationId": "GestaoController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lista de gestores retornada com sucesso."
+          }
+        },
+        "summary": "Listar todos os gestores",
+        "tags": [
+          "gestao"
+        ]
+      }
+    },
+    "/gestao/{id}": {
+      "get": {
+        "operationId": "GestaoController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do gestor",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gestor encontrado."
+          },
+          "404": {
+            "description": "Gestor não encontrado."
+          }
+        },
+        "summary": "Obter um gestor pelo ID",
+        "tags": [
+          "gestao"
+        ]
+      },
+      "put": {
+        "operationId": "GestaoController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do gestor",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGestorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Gestor atualizado com sucesso."
+          },
+          "404": {
+            "description": "Gestor não encontrado."
+          }
+        },
+        "summary": "Atualizar um gestor pelo ID",
+        "tags": [
+          "gestao"
+        ]
+      },
+      "delete": {
+        "operationId": "GestaoController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do gestor",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gestor removido com sucesso."
+          },
+          "404": {
+            "description": "Gestor não encontrado."
+          }
+        },
+        "summary": "Remover um gestor pelo ID",
+        "tags": [
+          "gestao"
+        ]
+      }
+    },
+    "/products": {
+      "post": {
+        "operationId": "ProductsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Produto criado com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Criar um novo produto",
+        "tags": [
+          "products"
+        ]
+      },
+      "get": {
+        "operationId": "ProductsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lista de produtos retornada com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar todos os produtos",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "operationId": "ProductsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do produto",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Produto encontrado com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Buscar um produto por ID",
+        "tags": [
+          "products"
+        ]
+      },
+      "put": {
+        "operationId": "ProductsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do produto",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Produto atualizado com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Atualizar um produto existente",
+        "tags": [
+          "products"
+        ]
+      },
+      "delete": {
+        "operationId": "ProductsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do produto",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Produto excluído com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Excluir um produto",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/sectors/{id}/config": {
+      "post": {
+        "operationId": "SectorsController_addConfig",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do setor",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddSectorConfigDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Configuração adicionada com sucesso."
+          }
+        },
+        "summary": "Adicionar uma configuração personalizada a um setor",
+        "tags": [
+          "sectors"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login realizado com sucesso."
+          },
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Credenciais inválidas."
+          }
+        },
+        "summary": "Realizar login",
+        "tags": [
+          "auth"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "NestJS API",
+    "description": "API documentation for NestJS with Swagger, Orval, and MikroORM",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "users",
+      "description": ""
+    }
+  ],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "productCode": {
+            "type": "string",
+            "description": "Código do produto",
+            "example": "PROD001"
+          },
+          "employeeCode": {
+            "type": "string",
+            "description": "Código do funcionário",
+            "example": "FUNC001"
+          },
+          "lotQuantity": {
+            "type": "number",
+            "description": "Quantidade do lote",
+            "example": 100
+          },
+          "finalDestination": {
+            "type": "string",
+            "description": "Destino final do lote",
+            "example": "Setor de Montagem"
+          }
+        },
+        "required": [
+          "productCode",
+          "employeeCode",
+          "lotQuantity",
+          "finalDestination"
+        ]
+      },
+      "TrackOrderDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "number",
+            "description": "ID da ordem de serviço",
+            "example": 1
+          },
+          "employeeCode": {
+            "type": "string",
+            "description": "Código do funcionário",
+            "example": "FUNC001"
+          },
+          "lostQuantity": {
+            "type": "number",
+            "description": "Quantidade de peças perdidas",
+            "example": 5
+          },
+          "processedQuantity": {
+            "type": "number",
+            "description": "Quantidade de peças processadas",
+            "example": 100
+          }
+        },
+        "required": [
+          "orderId",
+          "employeeCode"
+        ]
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "ID único do produto",
+            "example": 1
+          },
+          "code": {
+            "type": "string",
+            "description": "Código do produto",
+            "example": "PROD001"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do produto",
+            "example": "Produto A"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição do produto",
+            "example": "Descrição detalhada do produto"
+          },
+          "price": {
+            "type": "number",
+            "description": "Preço do produto",
+            "example": 99.99
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade em estoque",
+            "example": 100
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "price",
+          "quantity"
+        ]
+      },
+      "Funcionario": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "code": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "cargo": {
+            "type": "string"
+          },
+          "salario": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "default": "2025-02-23T19:38:19.362Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "default": "2025-02-23T19:38:19.362Z"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "nome",
+          "cargo",
+          "salario",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "OrderTracking": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "ID único do rastreamento",
+            "example": 1
+          },
+          "order": {
+            "description": "Pedido associado",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Order"
+              }
+            ]
+          },
+          "funcionarios": {
+            "description": "Funcionário responsável",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Funcionario"
+              }
+            ]
+          },
+          "startTime": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Hora de início do rastreamento",
+            "example": "2023-10-01T12:00:00Z"
+          },
+          "endTime": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Hora de término do rastreamento",
+            "example": "2023-10-01T14:00:00Z"
+          },
+          "lostQuantity": {
+            "type": "number",
+            "description": "Quantidade de peças perdidas",
+            "example": 5
+          },
+          "processedQuantity": {
+            "type": "number",
+            "description": "Quantidade de peças processadas",
+            "example": 100
+          }
+        },
+        "required": [
+          "id",
+          "order",
+          "funcionarios",
+          "startTime"
+        ]
+      },
+      "Etapa": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "ID único da etapa",
+            "example": 1
+          },
+          "nome": {
+            "type": "string",
+            "description": "Nome da etapa",
+            "example": "Corte"
+          },
+          "order": {
+            "description": "Pedido associado",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Order"
+              }
+            ]
+          },
+          "funcionario": {
+            "description": "Funcionário responsável",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Funcionario"
+              }
+            ]
+          },
+          "inicio": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Horário de início da etapa",
+            "example": "2023-10-01T12:00:00Z"
+          },
+          "fim": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Horário de término da etapa",
+            "example": "2023-10-01T14:00:00Z"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "order",
+          "funcionario"
+        ]
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "ID único do pedido",
+            "example": 1
+          },
+          "orderNumber": {
+            "type": "string",
+            "description": "Número da Ordem de Pedido (OP)",
+            "example": "OP-12345"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do pedido",
+            "example": "Pedido de cortes especiais"
+          },
+          "product": {
+            "description": "Produto associado",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Product"
+              }
+            ]
+          },
+          "funcionarioResposavel": {
+            "description": "Funcionário responsável",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Funcionario"
+              }
+            ]
+          },
+          "lotQuantity": {
+            "type": "number",
+            "description": "Quantidade de peças no lote",
+            "example": 100
+          },
+          "finalDestination": {
+            "type": "string",
+            "description": "Destino final do lote",
+            "example": "Setor de Montagem"
+          },
+          "trackings": {
+            "default": [],
+            "description": "Rastreamentos do pedido",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderTracking"
+            }
+          },
+          "status": {
+            "type": "string",
+            "default": "aberto",
+            "description": "Status do pedido",
+            "example": "aberto"
+          },
+          "etapas": {
+            "default": [],
+            "description": "Etapas do pedido",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Etapa"
+            }
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "default": "2025-02-23T19:38:19.361Z",
+            "description": "Data de criação do pedido",
+            "example": "2023-10-01T12:00:00Z"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "default": "2025-02-23T19:38:19.361Z",
+            "description": "Data de atualização do pedido",
+            "example": "2023-10-01T14:00:00Z"
+          }
+        },
+        "required": [
+          "id",
+          "orderNumber",
+          "name",
+          "product",
+          "funcionarioResposavel",
+          "lotQuantity",
+          "finalDestination",
+          "trackings",
+          "status",
+          "etapas",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "CreateFuncionarioDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código do funcionário"
+          },
+          "nome": {
+            "type": "string",
+            "description": "Nome do funcionário"
+          },
+          "cargo": {
+            "type": "string",
+            "description": "Cargo do funcionário"
+          },
+          "salario": {
+            "type": "number",
+            "description": "Salário do funcionário"
+          }
+        },
+        "required": [
+          "code",
+          "nome",
+          "cargo",
+          "salario"
+        ]
+      },
+      "UpdateFuncionarioDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código do funcionário"
+          },
+          "nome": {
+            "type": "string",
+            "description": "Nome do funcionário"
+          },
+          "cargo": {
+            "type": "string",
+            "description": "Cargo do funcionário"
+          },
+          "salario": {
+            "type": "number",
+            "description": "Salário do funcionário"
+          }
+        }
+      },
+      "CreateGestorDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código do gestor"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do gestor"
+          },
+          "department": {
+            "type": "string",
+            "description": "Departamento do gestor"
+          },
+          "role": {
+            "type": "string",
+            "description": "Cargo do gestor"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "department",
+          "role"
+        ]
+      },
+      "UpdateGestorDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código do gestor"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do gestor"
+          },
+          "department": {
+            "type": "string",
+            "description": "Departamento do gestor"
+          },
+          "role": {
+            "type": "string",
+            "description": "Cargo do gestor"
+          }
+        }
+      },
+      "CreateProductDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código do produto",
+            "example": "PROD001"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do produto",
+            "example": "Produto A"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição do produto",
+            "example": "Descrição detalhada do produto"
+          },
+          "price": {
+            "type": "number",
+            "description": "Preço do produto",
+            "example": 99.99
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade em estoque",
+            "example": 100
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "price",
+          "quantity"
+        ]
+      },
+      "UpdateProductDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Código do produto",
+            "example": "PROD001"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nome do produto",
+            "example": "Produto A"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição do produto",
+            "example": "Descrição detalhada do produto"
+          },
+          "price": {
+            "type": "number",
+            "description": "Preço do produto",
+            "example": 99.99
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantidade em estoque",
+            "example": 100
+          }
+        }
+      },
+      "AddSectorConfigDto": {
+        "type": "object",
+        "properties": {
+          "fieldName": {
+            "type": "string",
+            "description": "Nome do campo de configuração",
+            "example": "Temperatura Máxima"
+          },
+          "fieldType": {
+            "type": "string",
+            "description": "Tipo do campo de configuração",
+            "example": "number"
+          }
+        },
+        "required": [
+          "fieldName",
+          "fieldType"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Nome de usuário",
+            "example": "usuario123"
+          },
+          "password": {
+            "type": "string",
+            "description": "Senha do usuário",
+            "example": "senhaSegura123"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ]
+      }
+    }
+  }
+}
