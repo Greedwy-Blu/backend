@@ -1,4 +1,6 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+// src/gestao/entities/gestao.entity.ts
+import { Entity, PrimaryKey, Property, OneToOne } from '@mikro-orm/core';
+import { Auth } from '../../auth/entities/auth.entity';
 
 @Entity()
 export class Gestao {
@@ -9,17 +11,20 @@ export class Gestao {
   code!: string; // Código do gestor
 
   @Property()
-  name!: string; // Nome do gestor
+  name!: string;
 
   @Property()
-  department!: string; // Departamento do gestor
+  department!: string;
 
   @Property()
-  role!: string; // Cargo do gestor
+  role!: string;
+
+  @OneToOne(() => Auth, (auth) => auth.gestao, { owner: true }) // Lado proprietário
+  auth?: Auth;
 
   @Property()
-  createdAt: Date = new Date(); // Data de criação
+  createdAt: Date = new Date();
 
   @Property({ onUpdate: () => new Date() })
-  updatedAt: Date = new Date(); // Data de atualização
+  updatedAt: Date = new Date();
 }

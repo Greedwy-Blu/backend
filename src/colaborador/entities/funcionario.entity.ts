@@ -1,4 +1,6 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+// src/funcionario/entities/funcionario.entity.ts
+import { Entity, PrimaryKey, Property, OneToOne } from '@mikro-orm/core';
+import { Auth } from '../../auth/entities/auth.entity';
 
 @Entity()
 export class Funcionario {
@@ -6,7 +8,7 @@ export class Funcionario {
   id: number;
 
   @Property()
-  code: string;
+  code: string; // Código do funcionário
 
   @Property()
   nome: string;
@@ -17,9 +19,12 @@ export class Funcionario {
   @Property()
   salario: number;
 
+  @OneToOne(() => Auth, (auth) => auth.funcionario, { owner: true }) // Lado proprietário
+  auth?: Auth;
+
   @Property()
-  createdAt: Date = new Date(); // Valor padrão é a data atual
+  createdAt: Date = new Date();
 
   @Property({ onUpdate: () => new Date() })
-  updatedAt: Date = new Date(); // Valor padrão é a data atual
+  updatedAt: Date = new Date();
 }

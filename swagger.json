@@ -1246,6 +1246,89 @@
           "quantity"
         ]
       },
+      "Gestao": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "auth": {
+            "$ref": "#/components/schemas/Auth"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "default": "2025-03-02T22:40:47.902Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "default": "2025-03-02T22:40:47.902Z"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "department",
+          "role",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "Auth": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "code": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "funcionario": {
+            "$ref": "#/components/schemas/Funcionario"
+          },
+          "gestao": {
+            "$ref": "#/components/schemas/Gestao"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "default": "2025-03-02T22:40:47.897Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "default": "2025-03-02T22:40:47.897Z"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "password",
+          "role",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "Funcionario": {
         "type": "object",
         "properties": {
@@ -1264,15 +1347,18 @@
           "salario": {
             "type": "number"
           },
+          "auth": {
+            "$ref": "#/components/schemas/Auth"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T21:25:59.433Z"
+            "default": "2025-03-02T22:40:47.894Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T21:25:59.433Z"
+            "default": "2025-03-02T22:40:47.894Z"
           }
         },
         "required": [
@@ -1457,14 +1543,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T21:25:59.432Z",
+            "default": "2025-03-02T22:40:47.892Z",
             "description": "Data de criação do pedido",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T21:25:59.432Z",
+            "default": "2025-03-02T22:40:47.892Z",
             "description": "Data de atualização do pedido",
             "example": "2023-10-01T14:00:00Z"
           }
@@ -1691,10 +1777,10 @@
       "CreateAuthDto": {
         "type": "object",
         "properties": {
-          "username": {
+          "code": {
             "type": "string",
-            "description": "Nome de usuário único",
-            "example": "funcionario123"
+            "description": "Código do usuário",
+            "example": "FUNC123"
           },
           "password": {
             "type": "string",
@@ -1712,7 +1798,7 @@
           }
         },
         "required": [
-          "username",
+          "code",
           "password",
           "role"
         ]
@@ -1720,10 +1806,10 @@
       "LoginDto": {
         "type": "object",
         "properties": {
-          "username": {
+          "code": {
             "type": "string",
-            "description": "Nome de usuário",
-            "example": "funcionario123"
+            "description": "Código do usuário",
+            "example": "FUNC123"
           },
           "password": {
             "type": "string",
@@ -1732,7 +1818,7 @@
           }
         },
         "required": [
-          "username",
+          "code",
           "password"
         ]
       }

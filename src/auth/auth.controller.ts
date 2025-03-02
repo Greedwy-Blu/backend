@@ -1,3 +1,4 @@
+// src/auth/auth.controller.ts
 import {
   Controller,
   Post,
@@ -41,8 +42,8 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login realizado com sucesso.' })
   @ApiResponse({ status: 401, description: 'Credenciais inválidas.' })
   async login(@Body() loginDto: LoginDto) {
-    const user = await this.authService.validateUser(loginDto.username, loginDto.password);
-    return this.authService.login(user);
+    const auth = await this.authService.validateUser(loginDto.code, loginDto.password);
+    return this.authService.login(auth);
   }
 
   @Get('me')
@@ -54,7 +55,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Não autorizado.' })
   @ApiResponse({ status: 403, description: 'Acesso negado.' })
   async getProfile(@Request() req) {
-    const user = req.user;
-    return user;
+    const auth = req.user;
+    return auth;
   }
 }

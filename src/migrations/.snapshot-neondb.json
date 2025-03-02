@@ -15,8 +15,8 @@
           "nullable": false,
           "mappedType": "integer"
         },
-        "username": {
-          "name": "username",
+        "code": {
+          "name": "code",
           "type": "varchar(255)",
           "unsigned": false,
           "autoincrement": false,
@@ -34,26 +34,6 @@
           "nullable": false,
           "length": 255,
           "mappedType": "string"
-        },
-        "token": {
-          "name": "token",
-          "type": "varchar(255)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": true,
-          "length": 255,
-          "mappedType": "string"
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamptz",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": true,
-          "length": 6,
-          "mappedType": "datetime"
         },
         "role": {
           "name": "role",
@@ -89,16 +69,6 @@
       "name": "auth",
       "schema": "public",
       "indexes": [
-        {
-          "columnNames": [
-            "username"
-          ],
-          "composite": false,
-          "keyName": "auth_username_unique",
-          "constraint": true,
-          "primary": false,
-          "unique": true
-        },
         {
           "keyName": "auth_pkey",
           "columnNames": [
@@ -164,6 +134,15 @@
           "nullable": false,
           "mappedType": "integer"
         },
+        "auth_id": {
+          "name": "auth_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamptz",
@@ -189,6 +168,16 @@
       "schema": "public",
       "indexes": [
         {
+          "columnNames": [
+            "auth_id"
+          ],
+          "composite": false,
+          "keyName": "funcionario_auth_id_unique",
+          "constraint": true,
+          "primary": false,
+          "unique": true
+        },
+        {
           "keyName": "funcionario_pkey",
           "columnNames": [
             "id"
@@ -200,7 +189,20 @@
         }
       ],
       "checks": [],
-      "foreignKeys": {},
+      "foreignKeys": {
+        "funcionario_auth_id_foreign": {
+          "constraintName": "funcionario_auth_id_foreign",
+          "columnNames": [
+            "auth_id"
+          ],
+          "localTableName": "public.funcionario",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.auth",
+          "updateRule": "cascade"
+        }
+      },
       "nativeEnums": {}
     },
     {
@@ -254,6 +256,15 @@
           "length": 255,
           "mappedType": "string"
         },
+        "auth_id": {
+          "name": "auth_id",
+          "type": "int",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "mappedType": "integer"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamptz",
@@ -279,6 +290,16 @@
       "schema": "public",
       "indexes": [
         {
+          "columnNames": [
+            "auth_id"
+          ],
+          "composite": false,
+          "keyName": "gestao_auth_id_unique",
+          "constraint": true,
+          "primary": false,
+          "unique": true
+        },
+        {
           "keyName": "gestao_pkey",
           "columnNames": [
             "id"
@@ -290,7 +311,20 @@
         }
       ],
       "checks": [],
-      "foreignKeys": {},
+      "foreignKeys": {
+        "gestao_auth_id_foreign": {
+          "constraintName": "gestao_auth_id_foreign",
+          "columnNames": [
+            "auth_id"
+          ],
+          "localTableName": "public.gestao",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.auth",
+          "updateRule": "cascade"
+        }
+      },
       "nativeEnums": {}
     },
     {

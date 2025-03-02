@@ -1,14 +1,15 @@
+// src/auth/dto/create-auth.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsIn } from 'class-validator';
 
 export class CreateAuthDto {
   @ApiProperty({
-    description: 'Nome de usuário único',
-    example: 'funcionario123',
+    description: 'Código do usuário',
+    example: 'FUNC123',
   })
   @IsString()
   @IsNotEmpty()
-  username: string;
+  code: string;
 
   @ApiProperty({
     description: 'Senha do usuário',
