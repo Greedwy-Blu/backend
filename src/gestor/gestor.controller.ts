@@ -4,9 +4,10 @@ import { CreateGestorDto } from './dto/create-gestor.dto';
 import { UpdateGestorDto } from './dto/update-gestor.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('gestao')
+@ApiBearerAuth()
 @Controller('gestao')
 @UseGuards(RolesGuard)
 export class GestaoController {

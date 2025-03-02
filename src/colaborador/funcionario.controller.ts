@@ -2,9 +2,10 @@ import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common'
 import { FuncionarioService } from './funcionario.service';
 import { CreateFuncionarioDto } from './dto/create-funcionario';
 import { UpdateFuncionarioDto } from './dto/update-funcionario';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('funcionario') // Tag para agrupar endpoints no Swagger
+@ApiBearerAuth()
 @Controller('funcionario')
 export class FuncionarioController {
   constructor(private readonly funcionarioService: FuncionarioService) {}

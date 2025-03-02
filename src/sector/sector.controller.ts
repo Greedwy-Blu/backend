@@ -2,9 +2,10 @@
 import { Body, Controller, Post, Param } from '@nestjs/common';
 import { SectorsService } from './sector.service';
 import { AddSectorConfigDto } from './dto/add-sector-config.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('sectors')
+@ApiBearerAuth()
 @Controller('sectors')
 export class SectorsController {
   constructor(private readonly sectorsService: SectorsService) {}

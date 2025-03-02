@@ -957,12 +957,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-02-23T19:38:19.362Z"
+            "default": "2025-02-23T19:58:54.092Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-02-23T19:38:19.362Z"
+            "default": "2025-02-23T19:58:54.092Z"
           }
         },
         "required": [
@@ -1147,14 +1147,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-02-23T19:38:19.361Z",
+            "default": "2025-02-23T19:58:54.092Z",
             "description": "Data de criação do pedido",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-02-23T19:38:19.361Z",
+            "default": "2025-02-23T19:58:54.092Z",
             "description": "Data de atualização do pedido",
             "example": "2023-10-01T14:00:00Z"
           }
