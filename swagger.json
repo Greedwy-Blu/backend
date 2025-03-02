@@ -41,6 +41,11 @@
             "description": "Pedido criado com sucesso."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Criar um novo pedido",
         "tags": [
           "orders"
@@ -66,6 +71,11 @@
             "description": "Rastreamento iniciado com sucesso."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Iniciar o rastreamento de uma ordem",
         "tags": [
           "orders"
@@ -112,6 +122,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Finalizar o rastreamento de uma ordem",
         "tags": [
           "orders"
@@ -138,6 +153,11 @@
             "description": "Relatório retornado com sucesso."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Obter relatório de uma ordem",
         "tags": [
           "orders"
@@ -184,6 +204,11 @@
             "description": "Etapa criada com sucesso."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Criar uma nova etapa para uma ordem",
         "tags": [
           "orders"
@@ -208,6 +233,11 @@
             "description": "Etapas retornadas com sucesso."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Listar etapas de uma ordem",
         "tags": [
           "orders"
@@ -244,6 +274,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Iniciar uma etapa",
         "tags": [
           "orders"
@@ -280,6 +315,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Finalizar uma etapa",
         "tags": [
           "orders"
@@ -336,6 +376,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Atualizar o status de uma ordem",
         "tags": [
           "orders"
@@ -364,6 +409,11 @@
             "description": "Dados inválidos."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Criar um novo funcionário",
         "tags": [
           "funcionario"
@@ -377,6 +427,11 @@
             "description": "Lista de funcionários retornada com sucesso."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Listar todos os funcionários",
         "tags": [
           "funcionario"
@@ -405,6 +460,11 @@
             "description": "Funcionário não encontrado."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Obter um funcionário pelo ID",
         "tags": [
           "funcionario"
@@ -441,6 +501,11 @@
             "description": "Funcionário não encontrado."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Atualizar um funcionário pelo ID",
         "tags": [
           "funcionario"
@@ -467,6 +532,11 @@
             "description": "Funcionário não encontrado."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Remover um funcionário pelo ID",
         "tags": [
           "funcionario"
@@ -495,6 +565,11 @@
             "description": "Acesso negado."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Criar um novo gestor",
         "tags": [
           "gestao"
@@ -508,6 +583,11 @@
             "description": "Lista de gestores retornada com sucesso."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Listar todos os gestores",
         "tags": [
           "gestao"
@@ -536,6 +616,11 @@
             "description": "Gestor não encontrado."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Obter um gestor pelo ID",
         "tags": [
           "gestao"
@@ -572,6 +657,11 @@
             "description": "Gestor não encontrado."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Atualizar um gestor pelo ID",
         "tags": [
           "gestao"
@@ -598,6 +688,11 @@
             "description": "Gestor não encontrado."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Remover um gestor pelo ID",
         "tags": [
           "gestao"
@@ -751,6 +846,162 @@
         ]
       }
     },
+    "/sectors": {
+      "post": {
+        "operationId": "SectorsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSectorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Setor criado com sucesso."
+          },
+          "400": {
+            "description": "Dados inválidos."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Criar um novo setor",
+        "tags": [
+          "sectors"
+        ]
+      },
+      "get": {
+        "operationId": "SectorsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lista de setores retornada com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar todos os setores",
+        "tags": [
+          "sectors"
+        ]
+      }
+    },
+    "/sectors/{id}": {
+      "get": {
+        "operationId": "SectorsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do setor",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Setor encontrado."
+          },
+          "404": {
+            "description": "Setor não encontrado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obter um setor pelo ID",
+        "tags": [
+          "sectors"
+        ]
+      },
+      "put": {
+        "operationId": "SectorsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do setor",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSectorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Setor atualizado com sucesso."
+          },
+          "404": {
+            "description": "Setor não encontrado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Atualizar um setor pelo ID",
+        "tags": [
+          "sectors"
+        ]
+      },
+      "delete": {
+        "operationId": "SectorsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do setor",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Setor removido com sucesso."
+          },
+          "404": {
+            "description": "Setor não encontrado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remover um setor pelo ID",
+        "tags": [
+          "sectors"
+        ]
+      }
+    },
     "/sectors/{id}/config": {
       "post": {
         "operationId": "SectorsController_addConfig",
@@ -781,6 +1032,11 @@
             "description": "Configuração adicionada com sucesso."
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Adicionar uma configuração personalizada a um setor",
         "tags": [
           "sectors"
@@ -957,12 +1213,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-02-23T19:58:54.092Z"
+            "default": "2025-03-02T20:31:44.249Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-02-23T19:58:54.092Z"
+            "default": "2025-03-02T20:31:44.249Z"
           }
         },
         "required": [
@@ -1147,14 +1403,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-02-23T19:58:54.092Z",
+            "default": "2025-03-02T20:31:44.248Z",
             "description": "Data de criação do pedido",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-02-23T19:58:54.092Z",
+            "default": "2025-03-02T20:31:44.248Z",
             "description": "Data de atualização do pedido",
             "example": "2023-10-01T14:00:00Z"
           }
@@ -1333,6 +1589,29 @@
             "type": "number",
             "description": "Quantidade em estoque",
             "example": 100
+          }
+        }
+      },
+      "CreateSectorDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nome do setor",
+            "example": "Usinagem"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateSectorDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nome do setor",
+            "example": "Usinagem e Montagem"
           }
         }
       },
