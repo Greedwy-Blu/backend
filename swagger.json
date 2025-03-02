@@ -1043,6 +1043,34 @@
         ]
       }
     },
+    "/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAuthDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário criado com sucesso."
+          },
+          "400": {
+            "description": "Dados inválidos."
+          }
+        },
+        "summary": "Criar um novo usuário",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/auth/login": {
       "post": {
         "operationId": "AuthController_login",
@@ -1068,7 +1096,33 @@
             "description": "Credenciais inválidas."
           }
         },
-        "summary": "Realizar login",
+        "summary": "Fazer login",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "AuthController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Informações do usuário retornadas com sucesso."
+          },
+          "401": {
+            "description": "Não autorizado."
+          },
+          "403": {
+            "description": "Acesso negado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obter informações do usuário autenticado",
         "tags": [
           "auth"
         ]
@@ -1213,12 +1267,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T20:31:44.249Z"
+            "default": "2025-03-02T21:25:59.433Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T20:31:44.249Z"
+            "default": "2025-03-02T21:25:59.433Z"
           }
         },
         "required": [
@@ -1403,14 +1457,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T20:31:44.248Z",
+            "default": "2025-03-02T21:25:59.432Z",
             "description": "Data de criação do pedido",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T20:31:44.248Z",
+            "default": "2025-03-02T21:25:59.432Z",
             "description": "Data de atualização do pedido",
             "example": "2023-10-01T14:00:00Z"
           }
@@ -1634,18 +1688,47 @@
           "fieldType"
         ]
       },
+      "CreateAuthDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Nome de usuário único",
+            "example": "funcionario123"
+          },
+          "password": {
+            "type": "string",
+            "description": "Senha do usuário",
+            "example": "senha123"
+          },
+          "role": {
+            "type": "string",
+            "description": "Papel do usuário",
+            "example": "funcionario",
+            "enum": [
+              "funcionario",
+              "gestor"
+            ]
+          }
+        },
+        "required": [
+          "username",
+          "password",
+          "role"
+        ]
+      },
       "LoginDto": {
         "type": "object",
         "properties": {
           "username": {
             "type": "string",
             "description": "Nome de usuário",
-            "example": "usuario123"
+            "example": "funcionario123"
           },
           "password": {
             "type": "string",
             "description": "Senha do usuário",
-            "example": "senhaSegura123"
+            "example": "senha123"
           }
         },
         "required": [

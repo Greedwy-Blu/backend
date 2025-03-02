@@ -1,11 +1,10 @@
-// src/auth/dto/login.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty } from 'class-validator';
 
 export class LoginDto {
   @ApiProperty({
     description: 'Nome de usuário',
-    example: 'usuario123',
+    example: 'funcionario123',
   })
   @IsString()
   @IsNotEmpty()
@@ -13,7 +12,7 @@ export class LoginDto {
 
   @ApiProperty({
     description: 'Senha do usuário',
-    example: 'senhaSegura123',
+    example: 'senha123',
   })
   @IsString()
   @IsNotEmpty()
