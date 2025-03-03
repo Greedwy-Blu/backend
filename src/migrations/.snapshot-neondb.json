@@ -35,6 +35,26 @@
           "length": 255,
           "mappedType": "string"
         },
+        "access_token": {
+          "name": "access_token",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 255,
+          "mappedType": "string"
+        },
+        "token_expires_at": {
+          "name": "token_expires_at",
+          "type": "timestamptz",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "length": 6,
+          "mappedType": "datetime"
+        },
         "role": {
           "name": "role",
           "type": "varchar(255)",
@@ -140,7 +160,7 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": false,
+          "nullable": true,
           "mappedType": "integer"
         },
         "created_at": {
@@ -200,6 +220,7 @@
             "id"
           ],
           "referencedTableName": "public.auth",
+          "deleteRule": "set null",
           "updateRule": "cascade"
         }
       },
@@ -262,7 +283,7 @@
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
-          "nullable": false,
+          "nullable": true,
           "mappedType": "integer"
         },
         "created_at": {
@@ -322,6 +343,7 @@
             "id"
           ],
           "referencedTableName": "public.auth",
+          "deleteRule": "set null",
           "updateRule": "cascade"
         }
       },

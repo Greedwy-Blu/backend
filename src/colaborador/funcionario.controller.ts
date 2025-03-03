@@ -5,7 +5,7 @@ import { UpdateFuncionarioDto } from './dto/update-funcionario';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('funcionario') // Tag para agrupar endpoints no Swagger
-@ApiBearerAuth()
+
 @Controller('funcionario')
 export class FuncionarioController {
   constructor(private readonly funcionarioService: FuncionarioService) {}

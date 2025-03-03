@@ -409,11 +409,6 @@
             "description": "Dados inválidos."
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "Criar um novo funcionário",
         "tags": [
           "funcionario"
@@ -427,11 +422,6 @@
             "description": "Lista de funcionários retornada com sucesso."
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "Listar todos os funcionários",
         "tags": [
           "funcionario"
@@ -460,11 +450,6 @@
             "description": "Funcionário não encontrado."
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "Obter um funcionário pelo ID",
         "tags": [
           "funcionario"
@@ -501,11 +486,6 @@
             "description": "Funcionário não encontrado."
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "Atualizar um funcionário pelo ID",
         "tags": [
           "funcionario"
@@ -532,11 +512,6 @@
             "description": "Funcionário não encontrado."
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "Remover um funcionário pelo ID",
         "tags": [
           "funcionario"
@@ -1127,6 +1102,32 @@
           "auth"
         ]
       }
+    },
+    "/auth/validate-token": {
+      "post": {
+        "operationId": "AuthController_validateToken",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Token válido."
+          },
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Token inválido ou expirado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Validar token de acesso",
+        "tags": [
+          "auth"
+        ]
+      }
     }
   },
   "info": {
@@ -1270,12 +1271,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T22:40:47.902Z"
+            "default": "2025-03-03T03:26:28.442Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T22:40:47.902Z"
+            "default": "2025-03-03T03:26:28.442Z"
           }
         },
         "required": [
@@ -1300,6 +1301,13 @@
           "password": {
             "type": "string"
           },
+          "accessToken": {
+            "type": "string"
+          },
+          "tokenExpiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
           "role": {
             "type": "string"
           },
@@ -1312,12 +1320,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T22:40:47.897Z"
+            "default": "2025-03-03T03:26:28.440Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T22:40:47.897Z"
+            "default": "2025-03-03T03:26:28.440Z"
           }
         },
         "required": [
@@ -1353,12 +1361,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T22:40:47.894Z"
+            "default": "2025-03-03T03:26:28.439Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T22:40:47.894Z"
+            "default": "2025-03-03T03:26:28.439Z"
           }
         },
         "required": [
@@ -1543,14 +1551,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T22:40:47.892Z",
+            "default": "2025-03-03T03:26:28.438Z",
             "description": "Data de criação do pedido",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-02T22:40:47.892Z",
+            "default": "2025-03-03T03:26:28.438Z",
             "description": "Data de atualização do pedido",
             "example": "2023-10-01T14:00:00Z"
           }

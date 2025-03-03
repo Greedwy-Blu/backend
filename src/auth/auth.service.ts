@@ -8,6 +8,7 @@ import { Funcionario } from '../colaborador/entities/funcionario.entity';
 import { Gestao } from '../gestor/entities/gestor.entity';
 import { Auth } from './entities/auth.entity';
 import { CreateAuthDto } from './dto/create-auth.dto';
+import { LoginDto } from './dto/login.dto';
 import { EntityManager } from '@mikro-orm/postgresql';
 
 @Injectable()
@@ -96,8 +97,60 @@ export class AuthService {
       sub: auth.id,
       role: auth.role,
     };
+
+    // Gera o token de acesso
+    const accessToken = this.jwtService.sign(payload);
+
+    // Define a data de expiração do token (1 hora a partir de agora)
+    const tokenExpiresAt = new Date();
+    tokenExpiresAt.setHours(tokenExpiresAt.getHours() + 1);
+
+    // Atualiza o Auth com o token e a data de expiração
+    auth.accessToken = accessToken;
+    auth.tokenExpiresAt = tokenExpiresAt;
+    await this.em.flush();
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: accessToken,
+      expires_at: tokenExpiresAt,
     };
+  }
+
+  async validateToken(user: any): Promise<boolean> {
+    try {
+      // Verifica se o user.sub está definido
+      if (!user?.sub) {
+        throw new Error('ID do usuário não encontrado no token.');
+      }
+
+      // Busca o Auth no banco de dados
+      const auth = await this.authRepository.findOne(
+        { id: user.sub },
+        { populate: ['funcionario', 'gestao'] }, // Remova se não precisar desses dados
+      );
+
+      // Verifica se o registro foi encontrado
+      if (!auth) {
+        console.warn('Registro de autenticação não encontrado para o usuário:', user.sub);
+        return false;
+      }
+
+      // Verifica se o accessToken e tokenExpiresAt estão definidos
+      if (!auth.accessToken || !auth.tokenExpiresAt) {
+        console.warn('Token inválido: accessToken ou tokenExpiresAt não definidos.');
+        return false;
+      }
+
+      // Verifica se o token expirou
+      if (auth.tokenExpiresAt < new Date()) {
+        console.warn('Token expirado para o usuário:', user.sub);
+        return false;
+      }
+
+      return true; // Token válido
+    } catch (error) {
+      console.error('Erro ao validar o token:', error.message);
+      return false;
+    }
   }
 }

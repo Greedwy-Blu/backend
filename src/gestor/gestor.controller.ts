@@ -5,11 +5,12 @@ import { UpdateGestorDto } from './dto/update-gestor.dto';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @ApiTags('gestao')
 @ApiBearerAuth()
 @Controller('gestao')
-@UseGuards(RolesGuard)
+@UseGuards(JwtAuthGuard,RolesGuard)
 export class GestaoController {
   constructor(private readonly gestaoService: GestaoService) {}
 

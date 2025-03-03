@@ -7,6 +7,7 @@ import {
   UseGuards,
   Request,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
@@ -57,5 +58,20 @@ export class AuthController {
   async getProfile(@Request() req) {
     const auth = req.user;
     return auth;
+  }
+
+  @Post('validate-token')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Validar token de acesso' })
+  @ApiResponse({ status: 200, description: 'Token válido.' })
+  @ApiResponse({ status: 401, description: 'Token inválido ou expirado.' })
+  async validateToken(@Request() req) {
+    const user = req.user;
+    const isValid = await this.authService.validateToken(user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+    return { valid: true };
   }
 }

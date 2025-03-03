@@ -11,18 +11,25 @@ import {
   Delete,
   NotFoundException,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { SectorsService } from './sector.service';
 import { CreateSectorDto } from './dto/createSector.dto';
 import { UpdateSectorDto } from './dto/updateSector.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 
 
 @ApiTags('sectors')
 @ApiBearerAuth()
 @Controller('sectors')
+@UseGuards(JwtAuthGuard, RolesGuard) // Aplica o guard de roles a todos os endpoints do controller
+
 export class SectorsController {
   constructor(private readonly sectorsService: SectorsService) {}
   @Post()
+  @Roles('gestor')
   @ApiOperation({ summary: 'Criar um novo setor' })
   @ApiBody({ type: CreateSectorDto })
   @ApiResponse({ status: 201, description: 'Setor criado com sucesso.' })
@@ -32,6 +39,7 @@ export class SectorsController {
   }
 
   @Get()
+  @Roles('gestor')
   @ApiOperation({ summary: 'Listar todos os setores' })
   @ApiResponse({ status: 200, description: 'Lista de setores retornada com sucesso.' })
   async findAll() {
@@ -39,6 +47,7 @@ export class SectorsController {
   }
 
   @Get(':id')
+  @Roles('gestor')
   @ApiOperation({ summary: 'Obter um setor pelo ID' })
   @ApiParam({ name: 'id', type: Number, description: 'ID do setor' })
   @ApiResponse({ status: 200, description: 'Setor encontrado.' })
@@ -48,6 +57,7 @@ export class SectorsController {
   }
 
   @Put(':id')
+  @Roles('gestor')
   @ApiOperation({ summary: 'Atualizar um setor pelo ID' })
   @ApiParam({ name: 'id', type: Number, description: 'ID do setor' })
   @ApiBody({ type: UpdateSectorDto })
@@ -61,6 +71,7 @@ export class SectorsController {
   }
 
   @Delete(':id')
+  @Roles('gestor')
   @ApiOperation({ summary: 'Remover um setor pelo ID' })
   @ApiParam({ name: 'id', type: Number, description: 'ID do setor' })
   @ApiResponse({ status: 200, description: 'Setor removido com sucesso.' })
@@ -70,6 +81,7 @@ export class SectorsController {
   }
 
   @Post(':id/config')
+  @Roles('gestor')
   @ApiOperation({ summary: 'Adicionar uma configuração personalizada a um setor' })
   @ApiResponse({
     status: 201,

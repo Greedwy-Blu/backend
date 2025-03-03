@@ -1,4 +1,4 @@
-// src/gestao/entities/gestao.entity.ts
+// src/gestor/entities/gestor.entity.ts
 import { Entity, PrimaryKey, Property, OneToOne } from '@mikro-orm/core';
 import { Auth } from '../../auth/entities/auth.entity';
 
@@ -19,7 +19,7 @@ export class Gestao {
   @Property()
   role!: string;
 
-  @OneToOne(() => Auth, (auth) => auth.gestao, { owner: true }) // Lado proprietário
+  @OneToOne(() => Auth, (auth) => auth.gestao,{ owner: true, nullable: true }) // Campo auth é opcional
   auth?: Auth;
 
   @Property()

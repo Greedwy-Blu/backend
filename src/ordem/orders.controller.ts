@@ -6,6 +6,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -18,14 +19,19 @@ import {
   ApiParam,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 
 @ApiTags('orders')
 @ApiBearerAuth()
 @Controller('orders')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
+  @Roles('gestor')
   @ApiOperation({ summary: 'Criar um novo pedido' })
   @ApiResponse({
     status: 201,
@@ -37,6 +43,8 @@ export class OrdersController {
   }
 
   @Post('start-tracking')
+  
+  @Roles('gestor')
   @ApiOperation({ summary: 'Iniciar o rastreamento de uma ordem' })
   @ApiResponse({
     status: 201,
@@ -48,6 +56,8 @@ export class OrdersController {
   }
 
   @Post('end-tracking/:id')
+  
+  @Roles('gestor')
   @ApiOperation({ summary: 'Finalizar o rastreamento de uma ordem' })
   @ApiResponse({
     status: 200,
@@ -60,6 +70,8 @@ export class OrdersController {
   }
 
   @Get('report/:id')
+  
+  @Roles('gestor')
   @ApiOperation({ summary: 'Obter relatório de uma ordem' })
   @ApiResponse({
     status: 200,
@@ -71,6 +83,8 @@ export class OrdersController {
   }
 
   @Post(':id/etapas')
+  
+  @Roles('gestor')
   @ApiOperation({ summary: 'Criar uma nova etapa para uma ordem' })
   @ApiResponse({
     status: 201,
@@ -95,6 +109,8 @@ export class OrdersController {
   }
 
   @Post('etapas/:id/iniciar')
+  
+  @Roles('gestor')
   @ApiOperation({ summary: 'Iniciar uma etapa' })
   @ApiResponse({
     status: 200,
@@ -106,6 +122,8 @@ export class OrdersController {
   }
 
   @Post('etapas/:id/finalizar')
+  
+  @Roles('gestor')
   @ApiOperation({ summary: 'Finalizar uma etapa' })
   @ApiResponse({
     status: 200,
@@ -117,6 +135,8 @@ export class OrdersController {
   }
 
   @Get(':id/etapas')
+  
+  @Roles('gestor')
   @ApiOperation({ summary: 'Listar etapas de uma ordem' })
   @ApiResponse({
     status: 200,
@@ -128,6 +148,8 @@ export class OrdersController {
   }
 
   @Post(':id/atualizar-status')
+  
+  @Roles('gestor')
   @ApiOperation({ summary: 'Atualizar o status de uma ordem' })
   @ApiResponse({
     status: 200,

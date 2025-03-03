@@ -15,6 +15,7 @@ import { UpdateProductDto } from './dto/update-produto.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @ApiTags('products')
 @ApiBearerAuth() // Adiciona suporte a autenticação via Bearer Token no Swagger
@@ -24,7 +25,8 @@ export class ProductsController {
   constructor(private readonly productsService: ProdutoService) {}
 
   @Post()
-  @Roles('manager') // Apenas gestores podem criar produtos
+   // Protege a rota com JWT e Roles
+  @Roles('gestor') // Apenas gestores podem criar produtos
   @ApiOperation({ summary: 'Criar um novo produto' })
   @ApiResponse({
     status: 201,
@@ -36,7 +38,7 @@ export class ProductsController {
   }
 
   @Get()
-  @Roles('manager', 'employee') // Gestores e funcionários podem listar produtos
+  @Roles('gestor', 'funcionario') // Gestores e funcionários podem listar produtos
   @ApiOperation({ summary: 'Listar todos os produtos' })
   @ApiResponse({
     status: 200,
@@ -47,7 +49,7 @@ export class ProductsController {
   }
 
   @Get(':id')
-  @Roles('manager', 'employee') // Gestores e funcionários podem buscar um produto por ID
+  @Roles('gestor', 'funcionario') // Gestores e funcionários podem buscar um produto por ID
   @ApiOperation({ summary: 'Buscar um produto por ID' })
   @ApiResponse({
     status: 200,
@@ -59,7 +61,7 @@ export class ProductsController {
   }
 
   @Put(':id')
-  @Roles('manager') // Apenas gestores podem atualizar produtos
+  @Roles('gestor') // Apenas gestores podem atualizar produtos
   @ApiOperation({ summary: 'Atualizar um produto existente' })
   @ApiResponse({
     status: 200,
@@ -75,7 +77,7 @@ export class ProductsController {
   }
 
   @Delete(':id')
-  @Roles('manager') // Apenas gestores podem excluir produtos
+  @Roles('gestor') // Apenas gestores podem excluir produtos
   @ApiOperation({ summary: 'Excluir um produto' })
   @ApiResponse({
     status: 200,

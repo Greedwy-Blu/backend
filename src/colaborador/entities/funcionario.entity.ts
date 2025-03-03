@@ -1,4 +1,4 @@
-// src/funcionario/entities/funcionario.entity.ts
+// src/colaborador/entities/funcionario.entity.ts
 import { Entity, PrimaryKey, Property, OneToOne } from '@mikro-orm/core';
 import { Auth } from '../../auth/entities/auth.entity';
 
@@ -19,7 +19,7 @@ export class Funcionario {
   @Property()
   salario: number;
 
-  @OneToOne(() => Auth, (auth) => auth.funcionario, { owner: true }) // Lado proprietário
+  @OneToOne(() => Auth, (auth) => auth.funcionario, { owner: true, nullable: true }) // Campo auth é opcional
   auth?: Auth;
 
   @Property()
