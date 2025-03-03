@@ -485,6 +485,83 @@
         ]
       }
     },
+    "/orders/historico-producao": {
+      "post": {
+        "operationId": "OrdersController_createHistoricoProducao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHistoricoProducaoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registro de histórico de produção criado com sucesso."
+          },
+          "404": {
+            "description": "Pedido, funcionário ou motivo de interrupção não encontrado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Criar um novo registro no histórico de produção",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/historico-producao/{id}": {
+      "put": {
+        "operationId": "OrdersController_updateHistoricoProducao",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID do registro de histórico de produção",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateHistoricoProducaoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Registro de histórico de produção atualizado com sucesso."
+          },
+          "404": {
+            "description": "Registro de histórico de produção, pedido, funcionário ou motivo de interrupção não encontrado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Atualizar um registro no histórico de produção",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
     "/orders/{id}/historico-producao": {
       "get": {
         "operationId": "OrdersController_listHistoricoProducao",
@@ -1433,12 +1510,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:23:09.648Z"
+            "default": "2025-03-03T19:41:23.200Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:23:09.648Z"
+            "default": "2025-03-03T19:41:23.200Z"
           }
         },
         "required": [
@@ -1482,12 +1559,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:23:09.647Z"
+            "default": "2025-03-03T19:41:23.199Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:23:09.647Z"
+            "default": "2025-03-03T19:41:23.199Z"
           }
         },
         "required": [
@@ -1523,12 +1600,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:23:09.647Z"
+            "default": "2025-03-03T19:41:23.198Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:23:09.647Z"
+            "default": "2025-03-03T19:41:23.198Z"
           }
         },
         "required": [
@@ -1713,14 +1790,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:23:09.646Z",
+            "default": "2025-03-03T19:41:23.197Z",
             "description": "Data de criação do pedido",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:23:09.646Z",
+            "default": "2025-03-03T19:41:23.197Z",
             "description": "Data de atualização do pedido",
             "example": "2023-10-01T14:00:00Z"
           }
@@ -1758,6 +1835,83 @@
           "codigo",
           "descricao"
         ]
+      },
+      "CreateHistoricoProducaoDto": {
+        "type": "object",
+        "properties": {
+          "pedidoId": {
+            "type": "number",
+            "description": "ID do pedido associado",
+            "example": 1
+          },
+          "funcionarioId": {
+            "type": "number",
+            "description": "ID do funcionário responsável",
+            "example": 1
+          },
+          "acao": {
+            "type": "string",
+            "description": "Ação realizada",
+            "example": "início"
+          },
+          "detalhes": {
+            "type": "string",
+            "description": "Detalhes adicionais sobre a ação",
+            "example": "Início da etapa de corte"
+          },
+          "motivoInterrupcaoId": {
+            "type": "number",
+            "description": "ID do motivo de interrupção",
+            "example": 1
+          },
+          "dataHora": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Data e hora em que a ação foi registrada",
+            "example": "2023-10-01T12:00:00Z"
+          }
+        },
+        "required": [
+          "pedidoId",
+          "funcionarioId",
+          "acao"
+        ]
+      },
+      "UpdateHistoricoProducaoDto": {
+        "type": "object",
+        "properties": {
+          "pedidoId": {
+            "type": "number",
+            "description": "ID do pedido associado",
+            "example": 1
+          },
+          "funcionarioId": {
+            "type": "number",
+            "description": "ID do funcionário responsável",
+            "example": 1
+          },
+          "acao": {
+            "type": "string",
+            "description": "Ação realizada",
+            "example": "início"
+          },
+          "detalhes": {
+            "type": "string",
+            "description": "Detalhes adicionais sobre a ação",
+            "example": "Início da etapa de corte"
+          },
+          "motivoInterrupcaoId": {
+            "type": "number",
+            "description": "ID do motivo de interrupção",
+            "example": 1
+          },
+          "dataHora": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Data e hora em que a ação foi registrada",
+            "example": "2023-10-01T12:00:00Z"
+          }
+        }
       },
       "CreateAuthDto": {
         "type": "object",

@@ -27,6 +27,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { AuthService } from '../auth/auth.service';
 import { CreateMotivoInterrupcaoDto } from './dto/create-motivointerrupcao.dto';
 import { UpdateMotivoInterrupcaoDto } from './dto/update-motivointerrupcao.dto';
+import { UpdateHistoricoProducaoDto } from './dto/update-historico.dto';
+import { CreateHistoricoProducaoDto } from './dto/create-historico.dto';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -306,6 +308,52 @@ export class OrdersController {
     }
 
     return this.ordersService.createMotivoInterrupcao(createMotivoInterrupcaoDto);
+  }
+
+  @Post('historico-producao')
+  @Roles('gestor')
+  @ApiOperation({ summary: 'Criar um novo registro no histórico de produção' })
+  @ApiResponse({
+    status: 201,
+    description: 'Registro de histórico de produção criado com sucesso.',
+  })
+  @ApiResponse({ status: 404, description: 'Pedido, funcionário ou motivo de interrupção não encontrado.' })
+  @ApiBody({ type: CreateHistoricoProducaoDto })
+  async createHistoricoProducao(
+    @Body() createHistoricoProducaoDto: CreateHistoricoProducaoDto,
+    @Request() req,
+  ) {
+    // Valida o token manualmente (opcional)
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
+    return this.ordersService.createHistoricoProducao(createHistoricoProducaoDto);
+  }
+
+  @Put('historico-producao/:id')
+  @Roles('gestor')
+  @ApiOperation({ summary: 'Atualizar um registro no histórico de produção' })
+  @ApiResponse({
+    status: 200,
+    description: 'Registro de histórico de produção atualizado com sucesso.',
+  })
+  @ApiResponse({ status: 404, description: 'Registro de histórico de produção, pedido, funcionário ou motivo de interrupção não encontrado.' })
+  @ApiParam({ name: 'id', description: 'ID do registro de histórico de produção', example: 1 })
+  @ApiBody({ type: UpdateHistoricoProducaoDto })
+  async updateHistoricoProducao(
+    @Param('id') id: number,
+    @Body() updateHistoricoProducaoDto: UpdateHistoricoProducaoDto,
+    @Request() req,
+  ) {
+    // Valida o token manualmente (opcional)
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
+    return this.ordersService.updateHistoricoProducao(id, updateHistoricoProducaoDto);
   }
 
   @Get(':id/historico-producao')

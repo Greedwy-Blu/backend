@@ -37,6 +37,21 @@ export class OrdersService {
     private readonly em: EntityManager, // Injete o EntityManager
   ) {}
 
+
+  async findAll(): Promise<Order[]> {
+    return this.orderRepository.findAll({ populate: ['product', 'funcionarioResposavel'] });
+  }
+  
+  async findOne(id: number): Promise<Order> {
+    const order = await this.orderRepository.findOne(id, {
+      populate: ['product', 'funcionarioResposavel', 'etapas', 'trackings'],
+    });
+    if (!order) {
+      throw new NotFoundException('Pedido não encontrado.');
+    }
+    return order;
+  }
+
   // Cria um novo pedido
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
     const product = await this.productRepository.findOne({ code: createOrderDto.productCode });
@@ -235,19 +250,7 @@ export class OrdersService {
     return pedido;
   }
 
-  async findAll(): Promise<Order[]> {
-    return this.orderRepository.findAll({ populate: ['product', 'funcionarioResposavel'] });
-  }
-  
-  async findOne(id: number): Promise<Order> {
-    const order = await this.orderRepository.findOne(id, {
-      populate: ['product', 'funcionarioResposavel', 'etapas', 'trackings'],
-    });
-    if (!order) {
-      throw new NotFoundException('Pedido não encontrado.');
-    }
-    return order;
-  }
+ 
   
   async listMotivosInterrupcao(): Promise<MotivoInterrupcao[]> {
     return this.motivoRepository.findAll();
