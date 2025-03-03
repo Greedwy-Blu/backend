@@ -50,6 +50,24 @@
         "tags": [
           "orders"
         ]
+      },
+      "get": {
+        "operationId": "OrdersController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lista de pedidos retornada com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar todos os pedidos",
+        "tags": [
+          "orders"
+        ]
       }
     },
     "/orders/start-tracking": {
@@ -382,6 +400,150 @@
           }
         ],
         "summary": "Atualizar o status de uma ordem",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "operationId": "OrdersController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes do pedido retornados com sucesso."
+          },
+          "404": {
+            "description": "Pedido não encontrado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obter detalhes de um pedido por ID",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/motivos-interrupcao": {
+      "get": {
+        "operationId": "OrdersController_listMotivosInterrupcao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lista de motivos de interrupção retornada com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar todos os motivos de interrupção",
+        "tags": [
+          "orders"
+        ]
+      },
+      "post": {
+        "operationId": "OrdersController_createMotivoInterrupcao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMotivoInterrupcaoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Motivo de interrupção criado com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Adicionar um novo motivo de interrupção",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/{id}/historico-producao": {
+      "get": {
+        "operationId": "OrdersController_listHistoricoProducao",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Histórico de produção retornado com sucesso."
+          },
+          "404": {
+            "description": "Pedido não encontrado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar histórico de produção de um pedido",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/{id}/rastreamentos": {
+      "get": {
+        "operationId": "OrdersController_listRastreamentosByOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rastreamentos retornados com sucesso."
+          },
+          "404": {
+            "description": "Ordem não encontrada."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar todos os rastreamentos de uma ordem",
         "tags": [
           "orders"
         ]
@@ -1271,12 +1433,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T18:16:15.733Z"
+            "default": "2025-03-03T18:51:58.802Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T18:16:15.733Z"
+            "default": "2025-03-03T18:51:58.802Z"
           }
         },
         "required": [
@@ -1320,12 +1482,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T18:16:15.732Z"
+            "default": "2025-03-03T18:51:58.801Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T18:16:15.732Z"
+            "default": "2025-03-03T18:51:58.801Z"
           }
         },
         "required": [
@@ -1361,12 +1523,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T18:16:15.731Z"
+            "default": "2025-03-03T18:51:58.801Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T18:16:15.731Z"
+            "default": "2025-03-03T18:51:58.801Z"
           }
         },
         "required": [
@@ -1551,14 +1713,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T18:16:15.728Z",
+            "default": "2025-03-03T18:51:58.800Z",
             "description": "Data de criação do pedido",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T18:16:15.728Z",
+            "default": "2025-03-03T18:51:58.800Z",
             "description": "Data de atualização do pedido",
             "example": "2023-10-01T14:00:00Z"
           }
@@ -1576,6 +1738,21 @@
           "etapas",
           "created_at",
           "updated_at"
+        ]
+      },
+      "CreateMotivoInterrupcaoDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo",
+          "descricao"
         ]
       },
       "CreateAuthDto": {
