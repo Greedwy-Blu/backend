@@ -12,6 +12,8 @@ import { TrackOrderDto } from './dto/track-order.dto';
 import { Etapa } from './entities/etapa.entity';
 import { HistoricoProducao } from './entities/historico-producao.entity';
 import { MotivoInterrupcao } from './entities/motivo-interrupcao.entity';
+import { CreateMotivoInterrupcaoDto } from './dto/create-motivointerrupcao.dto';
+import { UpdateQuantidadeProcessadaDto } from './dto/update-motivointerrupcao.dto';
 
 @Injectable()
 export class OrdersService {
@@ -230,4 +232,53 @@ export class OrdersService {
     await this.em.flush();
     return pedido;
   }
+
+  async findAll(): Promise<Order[]> {
+    return this.orderRepository.findAll({ populate: ['product', 'funcionarioResposavel'] });
+  }
+  
+  // 2. Obter Detalhes de um Pedido por ID
+  async findOne(id: number): Promise<Order> {
+    const order = await this.orderRepository.findOne(id, {
+      populate: ['product', 'funcionarioResposavel', 'etapas', 'trackings'],
+    });
+    if (!order) {
+      throw new NotFoundException('Pedido não encontrado.');
+    }
+    return order;
+  }
+  
+  // 3. Listar Todos os Motivos de Interrupção
+  async listMotivosInterrupcao(): Promise<MotivoInterrupcao[]> {
+    return this.motivoRepository.findAll();
+  }
+  
+  // 4. Adicionar um Novo Motivo de Interrupção
+  async createMotivoInterrupcao(createMotivoInterrupcaoDto: CreateMotivoInterrupcaoDto): Promise<MotivoInterrupcao> {
+    const motivo = this.motivoRepository.create(createMotivoInterrupcaoDto);
+    await this.em.persistAndFlush(motivo);
+    return motivo;
+  }
+  
+  // 5. Listar Histórico de Produção de um Pedido
+  async listHistoricoProducao(orderId: number): Promise<HistoricoProducao[]> {
+    const historico = await this.historicoProducaoRepository.find({ pedido: orderId });
+    if (!historico) {
+      throw new NotFoundException('Histórico de produção não encontrado.');
+    }
+    return historico;
+  }
+  
+ 
+  
+  // 7. Listar Todos os Rastreamentos de uma Ordem
+  async listRastreamentosByOrder(orderId: number): Promise<OrderTracking[]> {
+    const rastreamentos = await this.orderTrackingRepository.find({ order: orderId });
+    if (!rastreamentos) {
+      throw new NotFoundException('Rastreamentos não encontrados.');
+    }
+    return rastreamentos;
+  }
+
+
 }

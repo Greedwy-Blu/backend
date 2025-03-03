@@ -8,6 +8,7 @@ import {
   UseGuards,
   Request,
   UnauthorizedException,
+  Put,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -24,6 +25,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { AuthService } from '../auth/auth.service';
+import { CreateMotivoInterrupcaoDto } from './dto/create-motivointerrupcao.dto';
+import { UpdateQuantidadeProcessadaDto } from './dto/update-motivointerrupcao.dto';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -229,5 +232,123 @@ export class OrdersController {
     }
 
     return this.ordersService.atualizarStatusPedido(pedidoId, status, motivoId);
+  }
+
+
+  @Get()
+  @Roles('gestor', 'funcionario')
+  @ApiOperation({ summary: 'Listar todos os pedidos' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de pedidos retornada com sucesso.',
+  })
+  async findAll(@Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
+    return this.ordersService.findAll();
+  }
+
+  @Get(':id')
+  @Roles('gestor', 'funcionario')
+  @ApiOperation({ summary: 'Obter detalhes de um pedido por ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Detalhes do pedido retornados com sucesso.',
+  })
+  @ApiResponse({ status: 404, description: 'Pedido não encontrado.' })
+  async findOne(@Param('id') id: number, @Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
+    const order = await this.ordersService.findOne(id);
+    if (!order) {
+      throw new NotFoundException('Pedido não encontrado.');
+    }
+    return order;
+  }
+
+  @Get('motivos-interrupcao')
+  @Roles('gestor', 'funcionario')
+  @ApiOperation({ summary: 'Listar todos os motivos de interrupção' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de motivos de interrupção retornada com sucesso.',
+  })
+  async listMotivosInterrupcao(@Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
+    return this.ordersService.listMotivosInterrupcao();
+  }
+
+  @Post('motivos-interrupcao')
+  @Roles('gestor')
+  @ApiOperation({ summary: 'Adicionar um novo motivo de interrupção' })
+  @ApiResponse({
+    status: 201,
+    description: 'Motivo de interrupção criado com sucesso.',
+  })
+  @ApiBody({ type: CreateMotivoInterrupcaoDto })
+  async createMotivoInterrupcao(
+    @Body() createMotivoInterrupcaoDto: CreateMotivoInterrupcaoDto,
+    @Request() req,
+  ) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
+    return this.ordersService.createMotivoInterrupcao(createMotivoInterrupcaoDto);
+  }
+
+  @Get(':id/historico-producao')
+  @Roles('gestor', 'funcionario')
+  @ApiOperation({ summary: 'Listar histórico de produção de um pedido' })
+  @ApiResponse({
+    status: 200,
+    description: 'Histórico de produção retornado com sucesso.',
+  })
+  @ApiResponse({ status: 404, description: 'Pedido não encontrado.' })
+  async listHistoricoProducao(@Param('id') id: number, @Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
+    const historico = await this.ordersService.listHistoricoProducao(id);
+    if (!historico) {
+      throw new NotFoundException('Pedido não encontrado.');
+    }
+    return historico;
+  }
+
+
+
+  @Get(':id/rastreamentos')
+  @Roles('gestor', 'funcionario')
+  @ApiOperation({ summary: 'Listar todos os rastreamentos de uma ordem' })
+  @ApiResponse({
+    status: 200,
+    description: 'Rastreamentos retornados com sucesso.',
+  })
+  @ApiResponse({ status: 404, description: 'Ordem não encontrada.' })
+  async listRastreamentosByOrder(@Param('id') orderId: number, @Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
+    const rastreamentos = await this.ordersService.listRastreamentosByOrder(orderId);
+    if (!rastreamentos) {
+      throw new NotFoundException('Ordem não encontrada.');
+    }
+    return rastreamentos;
   }
 }
