@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Request, UnauthorizedException } from '@nestjs/common';
 import { GestaoService } from './gestor.service';
 import { CreateGestorDto } from './dto/create-gestor.dto';
 import { UpdateGestorDto } from './dto/update-gestor.dto';
@@ -6,13 +6,16 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { AuthService } from 'src/auth/auth.service';
 
 @ApiTags('gestao')
 @ApiBearerAuth()
 @Controller('gestao')
 @UseGuards(JwtAuthGuard,RolesGuard)
 export class GestaoController {
-  constructor(private readonly gestaoService: GestaoService) {}
+  constructor(
+    private readonly gestaoService: GestaoService,
+    private readonly authService: AuthService,) {}
 
   @Post()
   @Roles('admin')
@@ -20,7 +23,11 @@ export class GestaoController {
   @ApiBody({ type: CreateGestorDto })
   @ApiResponse({ status: 201, description: 'Gestor criado com sucesso.' })
   @ApiResponse({ status: 403, description: 'Acesso negado.' })
-  async create(@Body() createGestorDto: CreateGestorDto) {
+  async create(@Body() createGestorDto: CreateGestorDto,@Request() req) {
+      const isValid = await this.authService.validateToken(req.user);
+        if (!isValid) {
+          throw new UnauthorizedException('Token inválido ou expirado');
+        }
     return this.gestaoService.create(createGestorDto);
   }
 
@@ -28,7 +35,11 @@ export class GestaoController {
   @Roles('admin', 'gestao')
   @ApiOperation({ summary: 'Listar todos os gestores' })
   @ApiResponse({ status: 200, description: 'Lista de gestores retornada com sucesso.' })
-  async findAll() {
+  async findAll(@Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+        if (!isValid) {
+          throw new UnauthorizedException('Token inválido ou expirado');
+        }
     return this.gestaoService.findAll();
   }
 
@@ -38,7 +49,11 @@ export class GestaoController {
   @ApiParam({ name: 'id', type: Number, description: 'ID do gestor' })
   @ApiResponse({ status: 200, description: 'Gestor encontrado.' })
   @ApiResponse({ status: 404, description: 'Gestor não encontrado.' })
-  async findOne(@Param('id') id: number) {
+  async findOne(@Param('id') id: number,@Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+        if (!isValid) {
+          throw new UnauthorizedException('Token inválido ou expirado');
+        }
     return this.gestaoService.findOne(id);
   }
 
@@ -49,7 +64,11 @@ export class GestaoController {
   @ApiBody({ type: UpdateGestorDto })
   @ApiResponse({ status: 200, description: 'Gestor atualizado com sucesso.' })
   @ApiResponse({ status: 404, description: 'Gestor não encontrado.' })
-  async update(@Param('id') id: number, @Body() updateGestorDto: UpdateGestorDto) {
+  async update(@Param('id') id: number, @Body() updateGestorDto: UpdateGestorDto,@Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
     return this.gestaoService.update(id, updateGestorDto);
   }
 
@@ -59,7 +78,11 @@ export class GestaoController {
   @ApiParam({ name: 'id', type: Number, description: 'ID do gestor' })
   @ApiResponse({ status: 200, description: 'Gestor removido com sucesso.' })
   @ApiResponse({ status: 404, description: 'Gestor não encontrado.' })
-  async remove(@Param('id') id: number) {
+  async remove(@Param('id') id: number,@Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
     return this.gestaoService.remove(id);
   }
 }

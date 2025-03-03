@@ -12,16 +12,19 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     console.log('Iniciando validação do token...');
   
+    // Verifica se o token é válido usando o JwtAuthGuard padrão
     const isValid = await super.canActivate(context);
     if (!isValid) {
       console.error('Token inválido.');
       throw new UnauthorizedException('Token inválido');
     }
   
+    // Obtém o usuário autenticado
     const request = context.switchToHttp().getRequest();
     const user = request.user;
     console.log('Usuário autenticado:', user);
   
+    // Verifica se o token está armazenado no banco de dados e se não expirou
     const auth = await this.authService.validateToken(user);
     if (!auth) {
       console.error('Token expirado ou inválido.');
@@ -29,7 +32,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
   
     console.log('Token válido.');
-    return true;
+    return true; // Retorna true para permitir o acesso
   }
   handleRequest(err, user, info) {
     if (err || !user) {

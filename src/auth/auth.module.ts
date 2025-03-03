@@ -13,7 +13,7 @@ import { Auth } from './entities/auth.entity';
 
 @Module({
   imports: [
-    MikroOrmModule.forFeature([Auth, Funcionario, Gestao]), // Registra as entidades
+    MikroOrmModule.forFeature([Auth, Funcionario, Gestao]), // Registra as entidades e repositórios
     PassportModule, // Habilita o Passport para autenticação
     JwtModule.registerAsync({
       imports: [ConfigModule], // Importa o ConfigModule para usar variáveis de ambiente
@@ -33,6 +33,6 @@ import { Auth } from './entities/auth.entity';
       useClass: RolesGuard,
     },
   ],
-  exports: [AuthService], // Exporta o AuthService para uso em outros módulos
+  exports: [AuthService, MikroOrmModule.forFeature([Auth, Funcionario, Gestao])], // Exporta o AuthService e os repositórios
 })
 export class AuthModule {}

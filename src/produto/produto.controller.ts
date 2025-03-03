@@ -8,6 +8,8 @@ import {
   Put,
   Delete,
   UseGuards,
+  Request,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ProdutoService } from './produto.service';
 import { CreateProductDto } from './dto/create-produto.dto';
@@ -16,13 +18,17 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { AuthService } from 'src/auth/auth.service';
 
 @ApiTags('products')
 @ApiBearerAuth() // Adiciona suporte a autenticação via Bearer Token no Swagger
 @Controller('products')
-@UseGuards(RolesGuard) // Aplica o guard de roles a todos os endpoints do controller
+@UseGuards(JwtAuthGuard, RolesGuard) // Aplica o guard de roles a todos os endpoints do controller
 export class ProductsController {
-  constructor(private readonly productsService: ProdutoService) {}
+  constructor(
+    private readonly productsService: ProdutoService,
+     private readonly authService: AuthService,
+  ) {}
 
   @Post()
    // Protege a rota com JWT e Roles
@@ -33,7 +39,13 @@ export class ProductsController {
     description: 'Produto criado com sucesso.',
   })
   @ApiBody({ type: CreateProductDto })
-  async create(@Body() createProductDto: CreateProductDto) {
+  async create(@Body() createProductDto: CreateProductDto, @Request() req) {
+
+     const isValid = await this.authService.validateToken(req.user);
+        if (!isValid) {
+          throw new UnauthorizedException('Token inválido ou expirado');
+        }
+    
     return this.productsService.create(createProductDto);
   }
 
@@ -56,7 +68,11 @@ export class ProductsController {
     description: 'Produto encontrado com sucesso.',
   })
   @ApiParam({ name: 'id', description: 'ID do produto', example: 1 })
-  async findOne(@Param('id') id: number) {
+  async findOne(@Param('id') id: number, @Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
     return this.productsService.findOne(id);
   }
 
@@ -71,8 +87,12 @@ export class ProductsController {
   @ApiBody({ type: UpdateProductDto })
   async update(
     @Param('id') id: number,
-    @Body() updateProductDto: UpdateProductDto,
+    @Body() updateProductDto: UpdateProductDto, @Request() req
   ) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
     return this.productsService.update(id, updateProductDto);
   }
 
@@ -84,7 +104,11 @@ export class ProductsController {
     description: 'Produto excluído com sucesso.',
   })
   @ApiParam({ name: 'id', description: 'ID do produto', example: 1 })
-  async remove(@Param('id') id: number) {
+  async remove(@Param('id') id: number, @Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
     return this.productsService.remove(id);
   }
 }

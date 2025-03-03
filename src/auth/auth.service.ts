@@ -118,35 +118,35 @@ export class AuthService {
 
   async validateToken(user: any): Promise<boolean> {
     try {
-      // Verifica se o user.sub está definido
-      if (!user?.sub) {
+      // Verifica se o user.id está definido
+      if (!user?.id) {
         throw new Error('ID do usuário não encontrado no token.');
       }
-
+  
       // Busca o Auth no banco de dados
       const auth = await this.authRepository.findOne(
-        { id: user.sub },
+        { id: user.id }, // Usa o user.id como ID
         { populate: ['funcionario', 'gestao'] }, // Remova se não precisar desses dados
       );
-
+  
       // Verifica se o registro foi encontrado
       if (!auth) {
-        console.warn('Registro de autenticação não encontrado para o usuário:', user.sub);
+        console.warn('Registro de autenticação não encontrado para o usuário:', user.id);
         return false;
       }
-
+  
       // Verifica se o accessToken e tokenExpiresAt estão definidos
       if (!auth.accessToken || !auth.tokenExpiresAt) {
         console.warn('Token inválido: accessToken ou tokenExpiresAt não definidos.');
         return false;
       }
-
+  
       // Verifica se o token expirou
       if (auth.tokenExpiresAt < new Date()) {
-        console.warn('Token expirado para o usuário:', user.sub);
+        console.warn('Token expirado para o usuário:', user.id);
         return false;
       }
-
+  
       return true; // Token válido
     } catch (error) {
       console.error('Erro ao validar o token:', error.message);

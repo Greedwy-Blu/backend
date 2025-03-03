@@ -1,4 +1,3 @@
-// src/orders/orders.controller.ts
 import {
   Body,
   Controller,
@@ -7,6 +6,8 @@ import {
   Param,
   Post,
   UseGuards,
+  Request,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -19,16 +20,20 @@ import {
   ApiParam,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { AuthService } from '../auth/auth.service';
 
 @ApiTags('orders')
 @ApiBearerAuth()
 @Controller('orders')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard) // Adicionar JwtAuthGuard
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly authService: AuthService, // Injetar o AuthService
+  ) {}
 
   @Post()
   @Roles('gestor')
@@ -38,12 +43,18 @@ export class OrdersController {
     description: 'Pedido criado com sucesso.',
   })
   @ApiBody({ type: CreateOrderDto })
-  async create(@Body() createOrderDto: CreateOrderDto) {
+  async create(@Body() createOrderDto: CreateOrderDto, @Request() req) {
+    console.log('Usuário autenticado:', req.user); // Verifique o objeto user
+
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
     return this.ordersService.create(createOrderDto);
   }
 
   @Post('start-tracking')
-  
   @Roles('gestor')
   @ApiOperation({ summary: 'Iniciar o rastreamento de uma ordem' })
   @ApiResponse({
@@ -51,12 +62,17 @@ export class OrdersController {
     description: 'Rastreamento iniciado com sucesso.',
   })
   @ApiBody({ type: TrackOrderDto })
-  async startTracking(@Body() trackOrderDto: TrackOrderDto) {
+  async startTracking(@Body() trackOrderDto: TrackOrderDto, @Request() req) {
+    // Valida o token manualmente (opcional)
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
     return this.ordersService.startTracking(trackOrderDto);
   }
 
   @Post('end-tracking/:id')
-  
   @Roles('gestor')
   @ApiOperation({ summary: 'Finalizar o rastreamento de uma ordem' })
   @ApiResponse({
@@ -65,12 +81,17 @@ export class OrdersController {
   })
   @ApiParam({ name: 'id', description: 'ID do rastreamento', example: 1 })
   @ApiBody({ type: TrackOrderDto })
-  async endTracking(@Param('id') id: number, @Body() trackOrderDto: TrackOrderDto) {
+  async endTracking(@Param('id') id: number, @Body() trackOrderDto: TrackOrderDto, @Request() req) {
+    // Valida o token manualmente (opcional)
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
     return this.ordersService.endTracking(id, trackOrderDto);
   }
 
   @Get('report/:id')
-  
   @Roles('gestor')
   @ApiOperation({ summary: 'Obter relatório de uma ordem' })
   @ApiResponse({
@@ -78,12 +99,17 @@ export class OrdersController {
     description: 'Relatório retornado com sucesso.',
   })
   @ApiParam({ name: 'id', description: 'ID da ordem', example: 1 })
-  async getOrderReport(@Param('id') id: number) {
+  async getOrderReport(@Param('id') id: number, @Request() req) {
+    // Valida o token manualmente (opcional)
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
     return this.ordersService.getOrderReport(id);
   }
 
   @Post(':id/etapas')
-  
   @Roles('gestor')
   @ApiOperation({ summary: 'Criar uma nova etapa para uma ordem' })
   @ApiResponse({
@@ -104,12 +130,18 @@ export class OrdersController {
     @Param('id') orderId: number,
     @Body('nome') nome: string,
     @Body('funcionarioCode') funcionarioCode: string,
+    @Request() req,
   ) {
+    // Valida o token manualmente (opcional)
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
     return this.ordersService.createEtapa(orderId, nome, funcionarioCode);
   }
 
   @Post('etapas/:id/iniciar')
-  
   @Roles('gestor')
   @ApiOperation({ summary: 'Iniciar uma etapa' })
   @ApiResponse({
@@ -117,12 +149,17 @@ export class OrdersController {
     description: 'Etapa iniciada com sucesso.',
   })
   @ApiParam({ name: 'id', description: 'ID da etapa', example: 1 })
-  async startEtapa(@Param('id') etapaId: number) {
+  async startEtapa(@Param('id') etapaId: number, @Request() req) {
+    // Valida o token manualmente (opcional)
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
     return this.ordersService.startEtapa(etapaId);
   }
 
   @Post('etapas/:id/finalizar')
-  
   @Roles('gestor')
   @ApiOperation({ summary: 'Finalizar uma etapa' })
   @ApiResponse({
@@ -130,12 +167,17 @@ export class OrdersController {
     description: 'Etapa finalizada com sucesso.',
   })
   @ApiParam({ name: 'id', description: 'ID da etapa', example: 1 })
-  async endEtapa(@Param('id') etapaId: number) {
+  async endEtapa(@Param('id') etapaId: number, @Request() req) {
+    // Valida o token manualmente (opcional)
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
     return this.ordersService.endEtapa(etapaId);
   }
 
   @Get(':id/etapas')
-  
   @Roles('gestor')
   @ApiOperation({ summary: 'Listar etapas de uma ordem' })
   @ApiResponse({
@@ -143,12 +185,17 @@ export class OrdersController {
     description: 'Etapas retornadas com sucesso.',
   })
   @ApiParam({ name: 'id', description: 'ID da ordem', example: 1 })
-  async listEtapasByOrder(@Param('id') orderId: number) {
+  async listEtapasByOrder(@Param('id') orderId: number, @Request() req) {
+    // Valida o token manualmente (opcional)
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
     return this.ordersService.listEtapasByOrder(orderId);
   }
 
   @Post(':id/atualizar-status')
-  
   @Roles('gestor')
   @ApiOperation({ summary: 'Atualizar o status de uma ordem' })
   @ApiResponse({
@@ -161,7 +208,7 @@ export class OrdersController {
       type: 'object',
       properties: {
         status: { type: 'string', example: 'em_andamento' },
-        motivoId: { type: 'number', example: 1},
+        motivoId: { type: 'number', example: 1 },
       },
     },
   })
@@ -169,7 +216,14 @@ export class OrdersController {
     @Param('id') pedidoId: number,
     @Body('status') status: string,
     @Body('motivoId') motivoId?: number,
+    @Request() req?: any,
   ) {
+    // Valida o token manualmente (opcional)
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
+
     if (status === 'interrompido' && !motivoId) {
       throw new NotFoundException('Motivo de interrupção é obrigatório.');
     }

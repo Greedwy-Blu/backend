@@ -9,16 +9,22 @@ import { Product } from '../produto/entities/produto.entity';
 import { Etapa } from './entities/etapa.entity';
 import { MotivoInterrupcao } from './entities/motivo-interrupcao.entity';
 import { HistoricoProducao } from './entities/historico-producao.entity';
+import { AuthModule } from '../auth/auth.module'; // Importe o AuthModule corretamente
 
 @Module({
-  imports: [MikroOrmModule.forFeature([ Order,
-    OrderTracking,
-    Funcionario,
-    Product,
-    Etapa, 
-    MotivoInterrupcao,
-    HistoricoProducao,])],
+  imports: [
+    MikroOrmModule.forFeature([
+      Order,
+      OrderTracking,
+      Funcionario,
+      Product,
+      Etapa,
+      MotivoInterrupcao,
+      HistoricoProducao,
+    ]),
+    AuthModule, // Importe o AuthModule aqui
+  ],
   controllers: [OrdersController],
-  providers: [OrdersService],
+  providers: [OrdersService], // Remova o AuthService daqui
 })
 export class OrdersModule {}

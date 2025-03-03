@@ -12,6 +12,8 @@ import {
   NotFoundException,
   ParseIntPipe,
   UseGuards,
+  UnauthorizedException,
+  Request,
 } from '@nestjs/common';
 import { SectorsService } from './sector.service';
 import { CreateSectorDto } from './dto/createSector.dto';
@@ -19,6 +21,7 @@ import { UpdateSectorDto } from './dto/updateSector.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import { AuthService } from 'src/auth/auth.service';
 
 
 @ApiTags('sectors')
@@ -27,14 +30,21 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard) // Aplica o guard de roles a todos os endpoints do controller
 
 export class SectorsController {
-  constructor(private readonly sectorsService: SectorsService) {}
+  constructor(
+    private readonly sectorsService: SectorsService,
+    private readonly authService: AuthService,
+  ) {}
   @Post()
   @Roles('gestor')
   @ApiOperation({ summary: 'Criar um novo setor' })
   @ApiBody({ type: CreateSectorDto })
   @ApiResponse({ status: 201, description: 'Setor criado com sucesso.' })
   @ApiResponse({ status: 400, description: 'Dados inválidos.' })
-  async create(@Body() createSectorDto: CreateSectorDto) {
+  async create(@Body() createSectorDto: CreateSectorDto, @Request() req) {
+     const isValid = await this.authService.validateToken(req.user);
+        if (!isValid) {
+          throw new UnauthorizedException('Token inválido ou expirado');
+        }
     return this.sectorsService.create(createSectorDto);
   }
 
@@ -42,7 +52,11 @@ export class SectorsController {
   @Roles('gestor')
   @ApiOperation({ summary: 'Listar todos os setores' })
   @ApiResponse({ status: 200, description: 'Lista de setores retornada com sucesso.' })
-  async findAll() {
+  async findAll(@Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+        if (!isValid) {
+          throw new UnauthorizedException('Token inválido ou expirado');
+        }
     return this.sectorsService.findAll();
   }
 
@@ -52,7 +66,11 @@ export class SectorsController {
   @ApiParam({ name: 'id', type: Number, description: 'ID do setor' })
   @ApiResponse({ status: 200, description: 'Setor encontrado.' })
   @ApiResponse({ status: 404, description: 'Setor não encontrado.' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(@Param('id', ParseIntPipe) id: number,@Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
     return this.sectorsService.findOne(id);
   }
 
@@ -66,7 +84,12 @@ export class SectorsController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateSectorDto: UpdateSectorDto,
+    @Request() req,
   ) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
     return this.sectorsService.update(id, updateSectorDto);
   }
 
@@ -76,7 +99,11 @@ export class SectorsController {
   @ApiParam({ name: 'id', type: Number, description: 'ID do setor' })
   @ApiResponse({ status: 200, description: 'Setor removido com sucesso.' })
   @ApiResponse({ status: 404, description: 'Setor não encontrado.' })
-  async remove(@Param('id', ParseIntPipe) id: number) {
+  async remove(@Param('id', ParseIntPipe) id: number,@Request() req) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
     return this.sectorsService.remove(id);
   }
 
@@ -92,7 +119,12 @@ export class SectorsController {
   async addConfig(
     @Param('id') id: number,
     @Body() addSectorConfigDto: AddSectorConfigDto,
+    @Request() req
   ) {
+    const isValid = await this.authService.validateToken(req.user);
+    if (!isValid) {
+      throw new UnauthorizedException('Token inválido ou expirado');
+    }
     return this.sectorsService.addConfig(id, addSectorConfigDto);
   }
 }
