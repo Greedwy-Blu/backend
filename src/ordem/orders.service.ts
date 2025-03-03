@@ -13,7 +13,9 @@ import { Etapa } from './entities/etapa.entity';
 import { HistoricoProducao } from './entities/historico-producao.entity';
 import { MotivoInterrupcao } from './entities/motivo-interrupcao.entity';
 import { CreateMotivoInterrupcaoDto } from './dto/create-motivointerrupcao.dto';
-import { UpdateQuantidadeProcessadaDto } from './dto/update-motivointerrupcao.dto';
+import { UpdateMotivoInterrupcaoDto } from './dto/update-motivointerrupcao.dto';
+import { CreateHistoricoProducaoDto } from './dto/create-historico.dto';
+import { UpdateHistoricoProducaoDto } from './dto/update-historico.dto';
 
 @Injectable()
 export class OrdersService {
@@ -237,7 +239,6 @@ export class OrdersService {
     return this.orderRepository.findAll({ populate: ['product', 'funcionarioResposavel'] });
   }
   
-  // 2. Obter Detalhes de um Pedido por ID
   async findOne(id: number): Promise<Order> {
     const order = await this.orderRepository.findOne(id, {
       populate: ['product', 'funcionarioResposavel', 'etapas', 'trackings'],
@@ -248,19 +249,118 @@ export class OrdersService {
     return order;
   }
   
-  // 3. Listar Todos os Motivos de Interrupção
   async listMotivosInterrupcao(): Promise<MotivoInterrupcao[]> {
     return this.motivoRepository.findAll();
   }
   
-  // 4. Adicionar um Novo Motivo de Interrupção
   async createMotivoInterrupcao(createMotivoInterrupcaoDto: CreateMotivoInterrupcaoDto): Promise<MotivoInterrupcao> {
     const motivo = this.motivoRepository.create(createMotivoInterrupcaoDto);
     await this.em.persistAndFlush(motivo);
     return motivo;
   }
+
+  async createHistoricoProducao(createHistoricoProducaoDto: CreateHistoricoProducaoDto): Promise<HistoricoProducao> {
+    // Busca o pedido pelo ID
+    const pedido = await this.orderRepository.findOne(createHistoricoProducaoDto.pedidoId);
+    if (!pedido) {
+      throw new NotFoundException('Pedido não encontrado.');
+    }
   
-  // 5. Listar Histórico de Produção de um Pedido
+    // Busca o funcionário pelo ID
+    const funcionario = await this.funcionariosRepository.findOne(createHistoricoProducaoDto.funcionarioId);
+    if (!funcionario) {
+      throw new NotFoundException('Funcionário não encontrado.');
+    }
+  
+    // Busca o motivo de interrupção pelo ID (se fornecido)
+    let motivoInterrupcao: MotivoInterrupcao | undefined;
+    if (createHistoricoProducaoDto.motivoInterrupcaoId) {
+      const motivo = await this.motivoRepository.findOne(createHistoricoProducaoDto.motivoInterrupcaoId);
+      if (!motivo) {
+        throw new NotFoundException('Motivo de interrupção não encontrado.');
+      }
+      motivoInterrupcao = motivo; // Atribui o motivo encontrado
+    }
+  
+    // Cria o registro no histórico de produção
+    const historico = this.historicoProducaoRepository.create({
+      pedido,
+      funcionario,
+      acao: createHistoricoProducaoDto.acao,
+      detalhes: createHistoricoProducaoDto.detalhes,
+      motivo_interrupcao: motivoInterrupcao, // Pode ser undefined
+      data_hora: new Date(),
+    });
+  
+    await this.em.persistAndFlush(historico); // Persiste o registro no banco de dados
+    return historico;
+  }
+
+  // 2. Atualizar um registro no histórico de produção
+  async updateHistoricoProducao(
+    id: number,
+    updateHistoricoProducaoDto: UpdateHistoricoProducaoDto,
+  ): Promise<HistoricoProducao> {
+    // Busca o registro de histórico de produção pelo ID
+    const historico = await this.historicoProducaoRepository.findOne(id);
+    if (!historico) {
+      throw new NotFoundException('Registro de histórico de produção não encontrado.');
+    }
+  
+    // Atualiza o pedido, se fornecido
+    if (updateHistoricoProducaoDto.pedidoId !== undefined) {
+      const pedido = await this.orderRepository.findOne(updateHistoricoProducaoDto.pedidoId);
+      if (!pedido) {
+        throw new NotFoundException('Pedido não encontrado.');
+      }
+      historico.pedido = pedido;
+    }
+  
+    // Atualiza o funcionário, se fornecido
+    if (updateHistoricoProducaoDto.funcionarioId !== undefined) {
+      const funcionario = await this.funcionariosRepository.findOne(updateHistoricoProducaoDto.funcionarioId);
+      if (!funcionario) {
+        throw new NotFoundException('Funcionário não encontrado.');
+      }
+      historico.funcionario = funcionario;
+    }
+  
+    // Atualiza a ação, se fornecida
+    if (updateHistoricoProducaoDto.acao !== undefined) {
+      historico.acao = updateHistoricoProducaoDto.acao;
+    }
+  
+    // Atualiza os detalhes, se fornecidos
+    if (updateHistoricoProducaoDto.detalhes !== undefined) {
+      historico.detalhes = updateHistoricoProducaoDto.detalhes;
+    }
+  
+    // Atualiza o motivo de interrupção, se fornecido
+    if (updateHistoricoProducaoDto.motivoInterrupcaoId !== undefined) {
+      if (updateHistoricoProducaoDto.motivoInterrupcaoId === null) {
+        // Se o motivoInterrupcaoId for explicitamente null, define o motivo_interrupcao como undefined
+        historico.motivo_interrupcao = undefined;
+      } else {
+        // Busca o motivo de interrupção pelo ID
+        const motivoInterrupcao = await this.motivoRepository.findOne(updateHistoricoProducaoDto.motivoInterrupcaoId);
+        if (!motivoInterrupcao) {
+          throw new NotFoundException('Motivo de interrupção não encontrado.');
+        }
+        historico.motivo_interrupcao = motivoInterrupcao;
+      }
+    }
+  
+    // Atualiza a data e hora, se fornecida
+    if (updateHistoricoProducaoDto.dataHora !== undefined) {
+      historico.data_hora = updateHistoricoProducaoDto.dataHora;
+    }
+  
+    // Sincroniza as alterações no banco de dados
+    await this.em.flush();
+    return historico;
+  }
+
+  
   async listHistoricoProducao(orderId: number): Promise<HistoricoProducao[]> {
     const historico = await this.historicoProducaoRepository.find({ pedido: orderId });
     if (!historico) {
@@ -271,7 +371,6 @@ export class OrdersService {
   
  
   
-  // 7. Listar Todos os Rastreamentos de uma Ordem
   async listRastreamentosByOrder(orderId: number): Promise<OrderTracking[]> {
     const rastreamentos = await this.orderTrackingRepository.find({ order: orderId });
     if (!rastreamentos) {

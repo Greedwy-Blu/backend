@@ -1,8 +1,15 @@
-import { IsNumber, IsNotEmpty, Min } from 'class-validator';
+import { IsString, IsOptional, Length } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
-export class UpdateQuantidadeProcessadaDto {
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(0) // Garante que a quantidade não seja negativa
-  quantidadeProcessada: number; // Nova quantidade de peças processadas
+export class UpdateMotivoInterrupcaoDto {
+  @IsString()
+  @IsOptional()
+  @Length(1, 10)
+  @ApiProperty({ description: 'Código do motivo de interrupção', example: 'M001', required: false })
+  codigo?: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({ description: 'Descrição do motivo de interrupção', example: 'Falta de material', required: false })
+  descricao?: string;
 }

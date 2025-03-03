@@ -1,12 +1,15 @@
 import { IsString, IsNotEmpty, Length } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateMotivoInterrupcaoDto {
   @IsString()
   @IsNotEmpty()
-  @Length(1, 10) // Define um comprimento máximo e mínimo para o código
-  codigo: string; // Código único do motivo de interrupção
+  @Length(1, 10)
+  @ApiProperty({ description: 'Código do motivo de interrupção', example: 'M001' })
+  codigo: string;
 
   @IsString()
   @IsNotEmpty()
-  descricao: string; // Descrição do motivo de interrupção
+  @ApiProperty({ description: 'Descrição do motivo de interrupção', example: 'Falta de material' })
+  descricao: string;
 }

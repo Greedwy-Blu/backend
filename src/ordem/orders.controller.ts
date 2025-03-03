@@ -26,7 +26,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { AuthService } from '../auth/auth.service';
 import { CreateMotivoInterrupcaoDto } from './dto/create-motivointerrupcao.dto';
-import { UpdateQuantidadeProcessadaDto } from './dto/update-motivointerrupcao.dto';
+import { UpdateMotivoInterrupcaoDto } from './dto/update-motivointerrupcao.dto';
 
 @ApiTags('orders')
 @ApiBearerAuth()
