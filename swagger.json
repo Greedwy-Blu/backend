@@ -1510,12 +1510,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:41:23.200Z"
+            "default": "2025-03-04T14:45:44.210Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:41:23.200Z"
+            "default": "2025-03-04T14:45:44.210Z"
           }
         },
         "required": [
@@ -1559,12 +1559,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:41:23.199Z"
+            "default": "2025-03-04T14:45:44.205Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:41:23.199Z"
+            "default": "2025-03-04T14:45:44.205Z"
           }
         },
         "required": [
@@ -1600,12 +1600,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:41:23.198Z"
+            "default": "2025-03-04T14:45:44.204Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:41:23.198Z"
+            "default": "2025-03-04T14:45:44.204Z"
           }
         },
         "required": [
@@ -1790,14 +1790,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:41:23.197Z",
+            "default": "2025-03-04T14:45:44.202Z",
             "description": "Data de criação do pedido",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-03T19:41:23.197Z",
+            "default": "2025-03-04T14:45:44.202Z",
             "description": "Data de atualização do pedido",
             "example": "2023-10-01T14:00:00Z"
           }
