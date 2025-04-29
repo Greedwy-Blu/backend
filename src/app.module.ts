@@ -12,6 +12,7 @@ import { GestaoModule } from './gestor/gestor.module';
 import { ProductsModule } from './produto/produto.module';
 import { SectorsModule } from './sector/sector.module';
 import { AuthModule } from './auth/auth.module';
+import { MaquinaModule } from './maquina/maquina.module'; // Importar MaquinaModule
 
 import { ConfigModule } from '@nestjs/config';
 @Module({
@@ -30,6 +31,7 @@ import { ConfigModule } from '@nestjs/config';
     ProductsModule, // Módulo de produtos
     SectorsModule, // Módulo de setores
     AuthModule, // Módulo de autenticação
+    MaquinaModule, // Adicionar MaquinaModule aqui
   ],
   controllers: [AppController], // Controladores globais
   providers: [AppService], // Serviços globais

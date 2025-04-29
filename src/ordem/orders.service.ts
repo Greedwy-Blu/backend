@@ -1,4 +1,4 @@
-// src/orders/orders.service.ts
+// src/ordem/orders.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/core';
@@ -7,6 +7,7 @@ import { Order } from './entities/order.entity';
 import { OrderTracking } from './entities/order-tracking.entity';
 import { Funcionario } from '../colaborador/entities/funcionario.entity';
 import { Product } from '../produto/entities/produto.entity';
+import { Maquina } from '../maquina/entities/maquina.entity'; // Importar a entidade Maquina
 import { CreateOrderDto } from './dto/create-order.dto';
 import { TrackOrderDto } from './dto/track-order.dto';
 import { Etapa } from './entities/etapa.entity';
@@ -34,17 +35,19 @@ export class OrdersService {
     private readonly motivoRepository: EntityRepository<MotivoInterrupcao>,
     @InjectRepository(HistoricoProducao)
     private readonly historicoProducaoRepository: EntityRepository<HistoricoProducao>,
+    @InjectRepository(Maquina) // Injetar o repositório de Maquina
+    private readonly maquinaRepository: EntityRepository<Maquina>,
     private readonly em: EntityManager, // Injete o EntityManager
   ) {}
 
 
   async findAll(): Promise<Order[]> {
-    return this.orderRepository.findAll({ populate: ['product', 'funcionarioResposavel'] });
+    return this.orderRepository.findAll({ populate: ['product', 'funcionarioResposavel', 'maquina'] });
   }
   
   async findOne(id: number): Promise<Order> {
     const order = await this.orderRepository.findOne(id, {
-      populate: ['product', 'funcionarioResposavel', 'etapas', 'trackings'],
+      populate: ['product', 'funcionarioResposavel', 'etapas', 'trackings', 'maquina'],
     });
     if (!order) {
       throw new NotFoundException('Pedido não encontrado.');
@@ -63,6 +66,15 @@ export class OrdersService {
     if (!funcionario) {
       throw new NotFoundException('Funcionário não encontrado.');
     }
+    
+    // Buscar a máquina pelo código, se fornecido
+    let maquina = undefined;
+    if (createOrderDto.maquinaCodigo) {
+      maquina = await this.maquinaRepository.findOne({ codigo: createOrderDto.maquinaCodigo });
+      if (!maquina) {
+        throw new NotFoundException(`Máquina com código ${createOrderDto.maquinaCodigo} não encontrada.`);
+      }
+    }
   
     // Cria o pedido com todos os campos obrigatórios
     const order = this.orderRepository.create({
@@ -70,6 +82,7 @@ export class OrdersService {
       name: `Pedido ${Date.now()}`, // Nome do pedido (pode ser personalizado)
       product, // Produto associado
       funcionarioResposavel: funcionario, // Funcionário responsável
+      maquina, // Máquina associada (pode ser undefined)
       lotQuantity: createOrderDto.lotQuantity, // Quantidade do lote
       finalDestination: createOrderDto.finalDestination, // Destino final
       status: 'aberto', // Status inicial do pedido
@@ -119,7 +132,7 @@ export class OrdersService {
 
   // Gera um relatório de uma ordem
   async getOrderReport(orderId: number) {
-    const order = await this.orderRepository.findOne(orderId, { populate: ['trackings'] });
+    const order = await this.orderRepository.findOne(orderId, { populate: ['trackings', 'maquina'] });
     if (!order) {
       throw new NotFoundException('Ordem não encontrada.');
     }
@@ -134,6 +147,11 @@ export class OrdersService {
       product: order.product.name,
       lotQuantity: order.lotQuantity,
       finalDestination: order.finalDestination,
+      maquina: order.maquina ? {
+        codigo: order.maquina.codigo,
+        nome: order.maquina.nome,
+        tipo: order.maquina.tipo
+      } : null,
       efficiency: efficiency.toFixed(2) + '%', // Eficiência em porcentagem
       trackings: order.trackings.getItems().map((tracking) => ({
         funcionarios: tracking.funcionarios.nome,
@@ -382,5 +400,25 @@ export class OrdersService {
     return rastreamentos;
   }
 
+  // Atualizar a máquina de uma ordem
+  async atualizarMaquina(orderId: number, maquinaCodigo: string): Promise<Order> {
+    const order = await this.orderRepository.findOne(orderId);
+    if (!order) {
+      throw new NotFoundException('Ordem não encontrada.');
+    }
 
+    if (maquinaCodigo) {
+      const maquina = await this.maquinaRepository.findOne({ codigo: maquinaCodigo });
+      if (!maquina) {
+        throw new NotFoundException(`Máquina com código ${maquinaCodigo} não encontrada.`);
+      }
+      order.maquina = maquina;
+    } else {
+      order.maquina = undefined; // Remove a associação com a máquina
+    }
+
+    order.updated_at = new Date();
+    await this.em.flush();
+    return order;
+  }
 }

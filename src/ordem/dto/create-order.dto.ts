@@ -1,6 +1,6 @@
 // src/orders/dto/create-order.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsNotEmpty } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateOrderDto {
   @ApiProperty({
@@ -18,6 +18,15 @@ export class CreateOrderDto {
   @IsString()
   @IsNotEmpty()
   employeeCode: string; // Código do funcionário
+
+  @ApiProperty({
+    description: 'Código da máquina designada (opcional)',
+    example: 'MAQ-001',
+    required: false,
+  })
+  @IsString()
+  @IsOptional() // Make machine code optional
+  maquinaCodigo?: string; // Código da máquina
 
   @ApiProperty({
     description: 'Quantidade do lote',

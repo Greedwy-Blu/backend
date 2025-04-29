@@ -1,10 +1,10 @@
 // src/entities/order.entity.ts
-// src/entities/order.entity.ts
 import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection } from '@mikro-orm/core';
 import { Product } from '../../produto/entities/produto.entity';
 import { Funcionario } from '../../colaborador/entities/funcionario.entity';
 import { OrderTracking } from './order-tracking.entity';
 import { Etapa } from './etapa.entity';
+import { Maquina } from '../../maquina/entities/maquina.entity'; // Import Maquina entity
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity()
@@ -28,6 +28,10 @@ export class Order {
   @ManyToOne(() => Funcionario)
   @ApiProperty({ description: 'Funcionário responsável', type: () => Funcionario })
   funcionarioResposavel!: Funcionario;
+
+  @ManyToOne(() => Maquina, { nullable: true }) // Add ManyToOne relationship with Maquina
+  @ApiProperty({ description: 'Máquina designada para o serviço', type: () => Maquina, required: false })
+  maquina?: Maquina; // Make it optional initially or based on requirements
 
   @Property()
   @ApiProperty({ description: 'Quantidade de peças no lote', example: 100 })

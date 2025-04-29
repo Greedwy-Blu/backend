@@ -9,6 +9,7 @@ import { Product } from '../produto/entities/produto.entity';
 import { Etapa } from './entities/etapa.entity';
 import { MotivoInterrupcao } from './entities/motivo-interrupcao.entity';
 import { HistoricoProducao } from './entities/historico-producao.entity';
+import { Maquina } from '../maquina/entities/maquina.entity'; // Importar Maquina
 import { AuthModule } from '../auth/auth.module'; // Importe o AuthModule corretamente
 
 @Module({
@@ -21,6 +22,7 @@ import { AuthModule } from '../auth/auth.module'; // Importe o AuthModule corret
       Etapa,
       MotivoInterrupcao,
       HistoricoProducao,
+      Maquina, // Adicionar Maquina aqui
     ]),
     AuthModule, // Importe o AuthModule aqui
   ],
