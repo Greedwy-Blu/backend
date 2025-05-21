@@ -68,7 +68,7 @@ export class OrdersService {
     }
     
     // Buscar a máquina pelo código, se fornecido
-    let maquina = undefined;
+    let maquina: Maquina | null = null;
     if (createOrderDto.maquinaCodigo) {
       maquina = await this.maquinaRepository.findOne({ codigo: createOrderDto.maquinaCodigo });
       if (!maquina) {

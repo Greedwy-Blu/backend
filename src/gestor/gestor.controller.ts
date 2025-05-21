@@ -18,16 +18,13 @@ export class GestaoController {
     private readonly authService: AuthService,) {}
 
   @Post()
-  @Roles('admin')
+  @Roles('admin', 'gestao')
   @ApiOperation({ summary: 'Criar um novo gestor' })
   @ApiBody({ type: CreateGestorDto })
   @ApiResponse({ status: 201, description: 'Gestor criado com sucesso.' })
   @ApiResponse({ status: 403, description: 'Acesso negado.' })
   async create(@Body() createGestorDto: CreateGestorDto,@Request() req) {
-      const isValid = await this.authService.validateToken(req.user);
-        if (!isValid) {
-          throw new UnauthorizedException('Token inválido ou expirado');
-        }
+      
     return this.gestaoService.create(createGestorDto);
   }
 
@@ -36,10 +33,7 @@ export class GestaoController {
   @ApiOperation({ summary: 'Listar todos os gestores' })
   @ApiResponse({ status: 200, description: 'Lista de gestores retornada com sucesso.' })
   async findAll(@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-        if (!isValid) {
-          throw new UnauthorizedException('Token inválido ou expirado');
-        }
+    
     return this.gestaoService.findAll();
   }
 
@@ -50,10 +44,7 @@ export class GestaoController {
   @ApiResponse({ status: 200, description: 'Gestor encontrado.' })
   @ApiResponse({ status: 404, description: 'Gestor não encontrado.' })
   async findOne(@Param('id') id: number,@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-        if (!isValid) {
-          throw new UnauthorizedException('Token inválido ou expirado');
-        }
+    
     return this.gestaoService.findOne(id);
   }
 
@@ -65,10 +56,7 @@ export class GestaoController {
   @ApiResponse({ status: 200, description: 'Gestor atualizado com sucesso.' })
   @ApiResponse({ status: 404, description: 'Gestor não encontrado.' })
   async update(@Param('id') id: number, @Body() updateGestorDto: UpdateGestorDto,@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+   
     return this.gestaoService.update(id, updateGestorDto);
   }
 
@@ -79,10 +67,7 @@ export class GestaoController {
   @ApiResponse({ status: 200, description: 'Gestor removido com sucesso.' })
   @ApiResponse({ status: 404, description: 'Gestor não encontrado.' })
   async remove(@Param('id') id: number,@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
     return this.gestaoService.remove(id);
   }
 }

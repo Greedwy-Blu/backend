@@ -1,7 +1,7 @@
 // src/maquina/maquina.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/postgresql';
+import { EntityManager, EntityRepository } from '@mikro-orm/postgresql';
 import { Maquina } from './entities/maquina.entity';
 import { CreateMaquinaDto } from './dto/create-maquina.dto';
 import { UpdateMaquinaDto } from './dto/update-maquina.dto';
@@ -12,11 +12,18 @@ export class MaquinaService {
   constructor(
     @InjectRepository(Maquina)
     private readonly maquinaRepository: EntityRepository<Maquina>,
+   private readonly em: EntityManager, // Injete o EntityManager
+  
   ) {}
 
   async create(createMaquinaDto: CreateMaquinaDto): Promise<Maquina> {
-    const maquina = this.maquinaRepository.create(createMaquinaDto);
-    await this.maquinaRepository.persistAndFlush(maquina);
+    const maquina = this.maquinaRepository.create({
+      ...createMaquinaDto,
+      status: 'ativo', // Default value for status
+      created_at: new Date(), // Set current date for created_at
+      updated_at: new Date(), // Set current date for updated_at
+    });
+    await this.em.persistAndFlush(maquina);
     return maquina;
   }
 
@@ -45,7 +52,7 @@ export class MaquinaService {
         throw new NotFoundException(`Máquina com ID ${id} não encontrada.`);
     }
     wrap(maquina).assign(updateMaquinaDto);
-    await this.maquinaRepository.flush();
+    await this.em.flush();
     return maquina;
   }
 
@@ -55,6 +62,6 @@ export class MaquinaService {
         // Redundante devido ao findOne, mas mantém a clareza
         throw new NotFoundException(`Máquina com ID ${id} não encontrada.`);
     }
-    await this.maquinaRepository.removeAndFlush(maquina);
+    await this.em.removeAndFlush(maquina);
   }
 }

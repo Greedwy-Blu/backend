@@ -41,7 +41,7 @@ export class OrdersController {
   ) {}
 
   @Post()
-  @Roles('gestor')
+  @Roles('gestao')
   @ApiOperation({ summary: 'Criar um novo pedido' })
   @ApiResponse({
     status: 201,
@@ -49,13 +49,10 @@ export class OrdersController {
   })
   @ApiBody({ type: CreateOrderDto })
   async create(@Body() createOrderDto: CreateOrderDto, @Request() req) {
-    console.log('Usuário autenticado:', req.user); // Verifique o objeto user
+    console.log('Usuário autenticado:', req.access_token); // Verifique o objeto user
 
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
-
+    
+   console.log('tonke usuário:', req.access_token); /// Verifique o objeto user
     return this.ordersService.create(createOrderDto);
   }
 
@@ -69,10 +66,7 @@ export class OrdersController {
   @ApiBody({ type: TrackOrderDto })
   async startTracking(@Body() trackOrderDto: TrackOrderDto, @Request() req) {
     // Valida o token manualmente (opcional)
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+   
 
     return this.ordersService.startTracking(trackOrderDto);
   }
@@ -88,10 +82,7 @@ export class OrdersController {
   @ApiBody({ type: TrackOrderDto })
   async endTracking(@Param('id') id: number, @Body() trackOrderDto: TrackOrderDto, @Request() req) {
     // Valida o token manualmente (opcional)
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
 
     return this.ordersService.endTracking(id, trackOrderDto);
   }
@@ -106,10 +97,7 @@ export class OrdersController {
   @ApiParam({ name: 'id', description: 'ID da ordem', example: 1 })
   async getOrderReport(@Param('id') id: number, @Request() req) {
     // Valida o token manualmente (opcional)
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+   
 
     return this.ordersService.getOrderReport(id);
   }
@@ -138,10 +126,7 @@ export class OrdersController {
     @Request() req,
   ) {
     // Valida o token manualmente (opcional)
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+   
 
     return this.ordersService.createEtapa(orderId, nome, funcionarioCode);
   }
@@ -156,11 +141,7 @@ export class OrdersController {
   @ApiParam({ name: 'id', description: 'ID da etapa', example: 1 })
   async startEtapa(@Param('id') etapaId: number, @Request() req) {
     // Valida o token manualmente (opcional)
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
-
+   
     return this.ordersService.startEtapa(etapaId);
   }
 
@@ -174,10 +155,7 @@ export class OrdersController {
   @ApiParam({ name: 'id', description: 'ID da etapa', example: 1 })
   async endEtapa(@Param('id') etapaId: number, @Request() req) {
     // Valida o token manualmente (opcional)
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+   
 
     return this.ordersService.endEtapa(etapaId);
   }
@@ -192,10 +170,7 @@ export class OrdersController {
   @ApiParam({ name: 'id', description: 'ID da ordem', example: 1 })
   async listEtapasByOrder(@Param('id') orderId: number, @Request() req) {
     // Valida o token manualmente (opcional)
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
 
     return this.ordersService.listEtapasByOrder(orderId);
   }
@@ -224,10 +199,7 @@ export class OrdersController {
     @Request() req?: any,
   ) {
     // Valida o token manualmente (opcional)
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+  
 
     if (status === 'interrompido' && !motivoId) {
       throw new NotFoundException('Motivo de interrupção é obrigatório.');
@@ -245,10 +217,7 @@ export class OrdersController {
     description: 'Lista de pedidos retornada com sucesso.',
   })
   async findAll(@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
 
     return this.ordersService.findAll();
   }
@@ -262,11 +231,7 @@ export class OrdersController {
   })
   @ApiResponse({ status: 404, description: 'Pedido não encontrado.' })
   async findOne(@Param('id') id: number, @Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
-
+   
     const order = await this.ordersService.findOne(id);
     if (!order) {
       throw new NotFoundException('Pedido não encontrado.');
@@ -282,10 +247,7 @@ export class OrdersController {
     description: 'Lista de motivos de interrupção retornada com sucesso.',
   })
   async listMotivosInterrupcao(@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
 
     return this.ordersService.listMotivosInterrupcao();
   }
@@ -302,10 +264,7 @@ export class OrdersController {
     @Body() createMotivoInterrupcaoDto: CreateMotivoInterrupcaoDto,
     @Request() req,
   ) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+  
 
     return this.ordersService.createMotivoInterrupcao(createMotivoInterrupcaoDto);
   }
@@ -324,10 +283,7 @@ export class OrdersController {
     @Request() req,
   ) {
     // Valida o token manualmente (opcional)
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
 
     return this.ordersService.createHistoricoProducao(createHistoricoProducaoDto);
   }
@@ -348,10 +304,7 @@ export class OrdersController {
     @Request() req,
   ) {
     // Valida o token manualmente (opcional)
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
 
     return this.ordersService.updateHistoricoProducao(id, updateHistoricoProducaoDto);
   }
@@ -365,10 +318,7 @@ export class OrdersController {
   })
   @ApiResponse({ status: 404, description: 'Pedido não encontrado.' })
   async listHistoricoProducao(@Param('id') id: number, @Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
 
     const historico = await this.ordersService.listHistoricoProducao(id);
     if (!historico) {
@@ -388,10 +338,7 @@ export class OrdersController {
   })
   @ApiResponse({ status: 404, description: 'Ordem não encontrada.' })
   async listRastreamentosByOrder(@Param('id') orderId: number, @Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
 
     const rastreamentos = await this.ordersService.listRastreamentosByOrder(orderId);
     if (!rastreamentos) {

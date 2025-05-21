@@ -21,4 +21,10 @@ export class CreateGestorDto {
   @IsString()
   @IsNotEmpty()
   role: string;
+
+  @ApiProperty({ description: 'Senha para acesso do gestor', minLength: 6 })
+  @IsString()
+  @IsNotEmpty()
+  // @MinLength(6) // Descomentar se quiser impor um tamanho mínimo
+  password: string;
 }

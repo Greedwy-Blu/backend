@@ -21,4 +21,10 @@ export class UpdateFuncionarioDto {
   @IsNumber()
   @IsOptional()
   salario?: number;
+
+  @ApiProperty({ description: 'Nova senha para acesso do funcionário (mínimo 6 caracteres)', required: false, minLength: 6 })
+  @IsString()
+  @IsOptional()
+  // @MinLength(6) // Descomentar se quiser impor um tamanho mínimo
+  password?: string;
 }

@@ -39,7 +39,7 @@ export class MaquinaController {
   }
 
   @Post()
-  @Roles('gestor')
+  @Roles('gestao')
   @ApiOperation({ summary: 'Criar uma nova máquina' })
   @ApiResponse({ status: 201, description: 'Máquina criada com sucesso.' })
   async create(@Body() createMaquinaDto: CreateMaquinaDto, @Request() req) {
@@ -48,7 +48,7 @@ export class MaquinaController {
   }
 
   @Get()
-  @Roles('gestor', 'funcionario')
+  @Roles('gestao', 'funcionario')
   @ApiOperation({ summary: 'Listar todas as máquinas' })
   @ApiResponse({ status: 200, description: 'Lista de máquinas retornada com sucesso.' })
   async findAll(@Request() req) {
@@ -57,7 +57,7 @@ export class MaquinaController {
   }
 
   @Get(':id')
-  @Roles('gestor', 'funcionario')
+  @Roles('gestao', 'funcionario')
   @ApiOperation({ summary: 'Obter detalhes de uma máquina por ID' })
   @ApiResponse({ status: 200, description: 'Detalhes da máquina retornados com sucesso.' })
   @ApiResponse({ status: 404, description: 'Máquina não encontrada.' })
@@ -72,7 +72,7 @@ export class MaquinaController {
   }
 
   @Patch(':id')
-  @Roles('gestor')
+  @Roles('gestao')
   @ApiOperation({ summary: 'Atualizar uma máquina por ID' })
   @ApiResponse({ status: 200, description: 'Máquina atualizada com sucesso.' })
   @ApiResponse({ status: 404, description: 'Máquina não encontrada.' })
@@ -87,7 +87,7 @@ export class MaquinaController {
   }
 
   @Delete(':id')
-  @Roles('gestor')
+  @Roles('gestao')
   @ApiOperation({ summary: 'Remover uma máquina por ID' })
   @ApiResponse({ status: 200, description: 'Máquina removida com sucesso.' })
   @ApiResponse({ status: 404, description: 'Máquina não encontrada.' })

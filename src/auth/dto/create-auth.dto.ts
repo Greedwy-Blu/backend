@@ -21,9 +21,9 @@ export class CreateAuthDto {
 
   @ApiProperty({
     description: 'Papel do usuário',
-    example: 'funcionario',
-    enum: ['funcionario', 'gestor'],
+    example: 'gestao',
+    enum: ['funcionario', 'gestao'],
   })
-  @IsIn(['funcionario', 'gestor'])
+  @IsIn(['funcionario', 'gestao'])
   role: string;
 }

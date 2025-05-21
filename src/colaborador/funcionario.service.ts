@@ -5,6 +5,7 @@ import { EntityManager } from '@mikro-orm/core';
 import { Funcionario } from './entities/funcionario.entity';
 import { CreateFuncionarioDto } from './dto/create-funcionario';
 import { UpdateFuncionarioDto } from './dto/update-funcionario';
+import * as bcrypt from 'bcrypt'; // Importar bcrypt
 
 @Injectable()
 export class FuncionarioService {
@@ -24,8 +25,15 @@ export class FuncionarioService {
     funcionario.cargo = createFuncionarioDto.cargo;
     funcionario.salario = createFuncionarioDto.salario;
 
+    // Hash da senha antes de salvar
+    const saltRounds = 10;
+    funcionario.password = await bcrypt.hash(createFuncionarioDto.password, saltRounds);
+
     // Persiste e sincroniza a entidade com o banco de dados
     await this.em.persistAndFlush(funcionario);
+
+    // Remover a password da resposta por segurança (embora já esteja hidden na entidade)
+    delete funcionario.password;
 
     return funcionario;
   }
@@ -61,7 +69,17 @@ export class FuncionarioService {
       funcionario.salario = updateFuncionarioDto.salario;
     }
 
+    // Hash da nova senha, se fornecida
+    if (updateFuncionarioDto.password) {
+      const saltRounds = 10;
+      funcionario.password = await bcrypt.hash(updateFuncionarioDto.password, saltRounds);
+    }
+
     await this.em.flush();
+
+    // Remover a password da resposta por segurança
+    delete funcionario.password;
+
     return funcionario;
   }
 

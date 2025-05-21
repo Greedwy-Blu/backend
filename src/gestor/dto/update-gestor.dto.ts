@@ -21,4 +21,10 @@ export class UpdateGestorDto {
   @IsString()
   @IsOptional()
   role?: string;
+
+  @ApiProperty({ description: 'Nova senha para acesso do gestor (mínimo 6 caracteres)', required: false, minLength: 6 })
+  @IsString()
+  @IsOptional()
+  // @MinLength(6) // Descomentar se quiser impor um tamanho mínimo
+  password?: string;
 }

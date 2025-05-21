@@ -1,4 +1,3 @@
-// src/colaborador/entities/funcionario.entity.ts
 import { Entity, PrimaryKey, Property, OneToOne } from '@mikro-orm/core';
 import { Auth } from '../../auth/entities/auth.entity';
 
@@ -18,6 +17,10 @@ export class Funcionario {
 
   @Property()
   salario: number;
+
+  // A anotação @Property foi removida deste campo password para que não seja mapeado para a base de dados, pois a senha é gerida pela entidade Auth.
+  // O campo password é mantido aqui opcionalmente para outros usos, como DTOs, conforme o comentário original.
+  password?: string; // Adicionado campo password (opcional na entidade, obrigatório via DTO)
 
   @OneToOne(() => Auth, (auth) => auth.funcionario, { owner: true, nullable: true }) // Campo auth é opcional
   auth?: Auth;

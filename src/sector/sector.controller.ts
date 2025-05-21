@@ -35,47 +35,38 @@ export class SectorsController {
     private readonly authService: AuthService,
   ) {}
   @Post()
-  @Roles('gestor')
+  @Roles('gestao')
   @ApiOperation({ summary: 'Criar um novo setor' })
   @ApiBody({ type: CreateSectorDto })
   @ApiResponse({ status: 201, description: 'Setor criado com sucesso.' })
   @ApiResponse({ status: 400, description: 'Dados inválidos.' })
   async create(@Body() createSectorDto: CreateSectorDto, @Request() req) {
-     const isValid = await this.authService.validateToken(req.user);
-        if (!isValid) {
-          throw new UnauthorizedException('Token inválido ou expirado');
-        }
+     
     return this.sectorsService.create(createSectorDto);
   }
 
   @Get()
-  @Roles('gestor')
+  @Roles('gestao')
   @ApiOperation({ summary: 'Listar todos os setores' })
   @ApiResponse({ status: 200, description: 'Lista de setores retornada com sucesso.' })
   async findAll(@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-        if (!isValid) {
-          throw new UnauthorizedException('Token inválido ou expirado');
-        }
+    
     return this.sectorsService.findAll();
   }
 
   @Get(':id')
-  @Roles('gestor')
+  @Roles('gestao')
   @ApiOperation({ summary: 'Obter um setor pelo ID' })
   @ApiParam({ name: 'id', type: Number, description: 'ID do setor' })
   @ApiResponse({ status: 200, description: 'Setor encontrado.' })
   @ApiResponse({ status: 404, description: 'Setor não encontrado.' })
   async findOne(@Param('id', ParseIntPipe) id: number,@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+  
     return this.sectorsService.findOne(id);
   }
 
   @Put(':id')
-  @Roles('gestor')
+  @Roles('gestao')
   @ApiOperation({ summary: 'Atualizar um setor pelo ID' })
   @ApiParam({ name: 'id', type: Number, description: 'ID do setor' })
   @ApiBody({ type: UpdateSectorDto })
@@ -86,29 +77,23 @@ export class SectorsController {
     @Body() updateSectorDto: UpdateSectorDto,
     @Request() req,
   ) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
     return this.sectorsService.update(id, updateSectorDto);
   }
 
   @Delete(':id')
-  @Roles('gestor')
+  @Roles('gestao')
   @ApiOperation({ summary: 'Remover um setor pelo ID' })
   @ApiParam({ name: 'id', type: Number, description: 'ID do setor' })
   @ApiResponse({ status: 200, description: 'Setor removido com sucesso.' })
   @ApiResponse({ status: 404, description: 'Setor não encontrado.' })
   async remove(@Param('id', ParseIntPipe) id: number,@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
     return this.sectorsService.remove(id);
   }
 
   @Post(':id/config')
-  @Roles('gestor')
+  @Roles('gestao')
   @ApiOperation({ summary: 'Adicionar uma configuração personalizada a um setor' })
   @ApiResponse({
     status: 201,
@@ -121,10 +106,7 @@ export class SectorsController {
     @Body() addSectorConfigDto: AddSectorConfigDto,
     @Request() req
   ) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
     return this.sectorsService.addConfig(id, addSectorConfigDto);
   }
 }

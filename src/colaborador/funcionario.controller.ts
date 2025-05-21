@@ -33,10 +33,7 @@ export class FuncionarioController {
   @ApiOperation({ summary: 'Listar todos os funcionários' })
   @ApiResponse({ status: 200, description: 'Lista de funcionários retornada com sucesso.' })
   async findAll(@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-        if (!isValid) {
-          throw new UnauthorizedException('Token inválido ou expirado');
-        }
+    
     return this.funcionarioService.findAll();
   }
 
@@ -46,10 +43,7 @@ export class FuncionarioController {
   @ApiResponse({ status: 200, description: 'Funcionário encontrado.' })
   @ApiResponse({ status: 404, description: 'Funcionário não encontrado.' })
   async findOne(@Param('id') id: number,@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-        if (!isValid) {
-          throw new UnauthorizedException('Token inválido ou expirado');
-        }
+    
     return this.funcionarioService.findOne(id);
   }
 
@@ -60,10 +54,7 @@ export class FuncionarioController {
   @ApiResponse({ status: 200, description: 'Funcionário atualizado com sucesso.' })
   @ApiResponse({ status: 404, description: 'Funcionário não encontrado.' })
   async update(@Param('id') id: number, @Body() updateFuncionarioDto: UpdateFuncionarioDto,@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+  
     return this.funcionarioService.update(id, updateFuncionarioDto);
   }
 
@@ -73,10 +64,7 @@ export class FuncionarioController {
   @ApiResponse({ status: 200, description: 'Funcionário removido com sucesso.' })
   @ApiResponse({ status: 404, description: 'Funcionário não encontrado.' })
   async remove(@Param('id') id: number,@Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+   
     return this.funcionarioService.remove(id);
   }
 }

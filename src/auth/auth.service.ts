@@ -39,7 +39,7 @@ export class AuthService {
       if (!funcionario) {
         throw new NotFoundException('Funcionário não encontrado');
       }
-    } else if (role === 'gestor') {
+    } else if (role === 'gestao') {
       const gestor = await this.gestaoRepository.findOne({ code });
       if (!gestor) {
         throw new NotFoundException('Gestor não encontrado');
@@ -48,8 +48,7 @@ export class AuthService {
       throw new UnauthorizedException('Role inválido');
     }
 
-    // Hash da senha
-    const hashedPassword = await bcrypt.hash(password, 10);
+   const hashedPassword = await bcrypt.hash(password, 10);
 
     const auth = new Auth();
     auth.code = code;
@@ -61,7 +60,7 @@ export class AuthService {
       if (funcionario) {
         auth.funcionario = funcionario; // Associa o Funcionario ao Auth
       }
-    } else if (role === 'gestor') {
+    } else if (role === 'gestao') {
       const gestor = await this.gestaoRepository.findOne({ code });
       if (gestor) {
         auth.gestao = gestor; // Associa o Gestao ao Auth
@@ -73,6 +72,7 @@ export class AuthService {
   }
 
   async validateUser(code: string, password: string): Promise<Auth> {
+      
     const auth = await this.authRepository.findOne(
       { code },
       { populate: ['funcionario', 'gestao'] }, // Carrega o relacionamento
@@ -113,6 +113,12 @@ export class AuthService {
     return {
       access_token: accessToken,
       expires_at: tokenExpiresAt,
+      role: auth.role,
+      sub:auth.id,
+      code: auth.code,
+      userAuth: auth.gestao?.auth?.id || auth.funcionario?.auth?.id,
+      user: auth.gestao || auth.funcionario,
+
     };
   }
 

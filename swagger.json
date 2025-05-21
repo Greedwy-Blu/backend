@@ -1367,6 +1367,162 @@
           "sectors"
         ]
       }
+    },
+    "/maquinas": {
+      "post": {
+        "operationId": "MaquinaController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMaquinaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Máquina criada com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Criar uma nova máquina",
+        "tags": [
+          "maquinas"
+        ]
+      },
+      "get": {
+        "operationId": "MaquinaController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lista de máquinas retornada com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar todas as máquinas",
+        "tags": [
+          "maquinas"
+        ]
+      }
+    },
+    "/maquinas/{id}": {
+      "get": {
+        "operationId": "MaquinaController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da máquina",
+            "schema": {
+              "example": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes da máquina retornados com sucesso."
+          },
+          "404": {
+            "description": "Máquina não encontrada."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obter detalhes de uma máquina por ID",
+        "tags": [
+          "maquinas"
+        ]
+      },
+      "patch": {
+        "operationId": "MaquinaController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da máquina",
+            "schema": {
+              "example": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMaquinaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Máquina atualizada com sucesso."
+          },
+          "404": {
+            "description": "Máquina não encontrada."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Atualizar uma máquina por ID",
+        "tags": [
+          "maquinas"
+        ]
+      },
+      "delete": {
+        "operationId": "MaquinaController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da máquina",
+            "schema": {
+              "example": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Máquina removida com sucesso."
+          },
+          "404": {
+            "description": "Máquina não encontrada."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remover uma máquina por ID",
+        "tags": [
+          "maquinas"
+        ]
+      }
     }
   },
   "info": {
@@ -1379,10 +1535,28 @@
     {
       "name": "users",
       "description": ""
+    },
+    {
+      "name": "auth",
+      "description": ""
+    },
+    {
+      "name": "orders",
+      "description": ""
     }
   ],
   "servers": [],
   "components": {
+    "securitySchemes": {
+      "JWT-auth": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "name": "JWT",
+        "description": "Enter JWT token",
+        "in": "header"
+      }
+    },
     "schemas": {
       "CreateOrderDto": {
         "type": "object",
@@ -1396,6 +1570,11 @@
             "type": "string",
             "description": "Código do funcionário",
             "example": "FUNC001"
+          },
+          "maquinaCodigo": {
+            "type": "string",
+            "description": "Código da máquina designada (opcional)",
+            "example": "MAQ-001"
           },
           "lotQuantity": {
             "type": "number",
@@ -1504,18 +1683,21 @@
           "role": {
             "type": "string"
           },
+          "password": {
+            "type": "string"
+          },
           "auth": {
             "$ref": "#/components/schemas/Auth"
           },
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-16T21:40:37.648Z"
+            "default": "2025-05-20T22:05:55.148Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-16T21:40:37.648Z"
+            "default": "2025-05-20T22:05:55.148Z"
           }
         },
         "required": [
@@ -1559,12 +1741,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-16T21:40:37.647Z"
+            "default": "2025-05-20T22:05:55.134Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-16T21:40:37.647Z"
+            "default": "2025-05-20T22:05:55.134Z"
           }
         },
         "required": [
@@ -1594,18 +1776,21 @@
           "salario": {
             "type": "number"
           },
+          "password": {
+            "type": "string"
+          },
           "auth": {
             "$ref": "#/components/schemas/Auth"
           },
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-16T21:40:37.646Z"
+            "default": "2025-05-20T22:05:55.117Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-16T21:40:37.646Z"
+            "default": "2025-05-20T22:05:55.117Z"
           }
         },
         "required": [
@@ -1616,6 +1801,86 @@
           "salario",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "Maquina": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "description": "ID único da máquina",
+            "example": 1
+          },
+          "codigo": {
+            "type": "string",
+            "description": "Código da máquina",
+            "example": "MAQ-001"
+          },
+          "nome": {
+            "type": "string",
+            "description": "Nome da máquina",
+            "example": "Torno CNC"
+          },
+          "tipo": {
+            "type": "string",
+            "description": "Tipo da máquina",
+            "example": "Torno"
+          },
+          "modelo": {
+            "type": "string",
+            "description": "Modelo da máquina",
+            "example": "CNC-5000"
+          },
+          "fabricante": {
+            "type": "string",
+            "description": "Fabricante da máquina",
+            "example": "Romi"
+          },
+          "capacidade": {
+            "type": "string",
+            "description": "Capacidade da máquina",
+            "example": "500kg"
+          },
+          "status": {
+            "type": "string",
+            "default": "ativa",
+            "description": "Status da máquina",
+            "example": "ativa"
+          },
+          "ordens": {
+            "default": [],
+            "description": "Ordens de serviço associadas à máquina",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Order"
+            }
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "default": "2025-05-20T22:05:55.163Z",
+            "description": "Data de criação do registro",
+            "example": "2023-10-01T12:00:00Z"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "default": "2025-05-20T22:05:55.163Z",
+            "description": "Data de atualização do registro",
+            "example": "2023-10-01T14:00:00Z"
+          }
+        },
+        "required": [
+          "id",
+          "codigo",
+          "nome",
+          "tipo",
+          "modelo",
+          "fabricante",
+          "status",
+          "ordens",
+          "created_at",
+          "updated_at"
         ]
       },
       "OrderTracking": {
@@ -1755,6 +2020,14 @@
               }
             ]
           },
+          "maquina": {
+            "description": "Máquina designada para o serviço",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Maquina"
+              }
+            ]
+          },
           "lotQuantity": {
             "type": "number",
             "description": "Quantidade de peças no lote",
@@ -1790,14 +2063,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-16T21:40:37.645Z",
+            "default": "2025-05-20T22:05:55.107Z",
             "description": "Data de criação do pedido",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-03-16T21:40:37.645Z",
+            "default": "2025-05-20T22:05:55.107Z",
             "description": "Data de atualização do pedido",
             "example": "2023-10-01T14:00:00Z"
           }
@@ -1929,10 +2202,10 @@
           "role": {
             "type": "string",
             "description": "Papel do usuário",
-            "example": "funcionario",
+            "example": "gestao",
             "enum": [
               "funcionario",
-              "gestor"
+              "gestao"
             ]
           }
         },
@@ -1979,13 +2252,19 @@
           "salario": {
             "type": "number",
             "description": "Salário do funcionário"
+          },
+          "password": {
+            "type": "string",
+            "description": "Senha para acesso do funcionário",
+            "minLength": 6
           }
         },
         "required": [
           "code",
           "nome",
           "cargo",
-          "salario"
+          "salario",
+          "password"
         ]
       },
       "UpdateFuncionarioDto": {
@@ -2006,6 +2285,11 @@
           "salario": {
             "type": "number",
             "description": "Salário do funcionário"
+          },
+          "password": {
+            "type": "string",
+            "description": "Nova senha para acesso do funcionário (mínimo 6 caracteres)",
+            "minLength": 6
           }
         }
       },
@@ -2027,13 +2311,19 @@
           "role": {
             "type": "string",
             "description": "Cargo do gestor"
+          },
+          "password": {
+            "type": "string",
+            "description": "Senha para acesso do gestor",
+            "minLength": 6
           }
         },
         "required": [
           "code",
           "name",
           "department",
-          "role"
+          "role",
+          "password"
         ]
       },
       "UpdateGestorDto": {
@@ -2054,6 +2344,11 @@
           "role": {
             "type": "string",
             "description": "Cargo do gestor"
+          },
+          "password": {
+            "type": "string",
+            "description": "Nova senha para acesso do gestor (mínimo 6 caracteres)",
+            "minLength": 6
           }
         }
       },
@@ -2164,6 +2459,83 @@
           "fieldName",
           "fieldType"
         ]
+      },
+      "CreateMaquinaDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "description": "Código da máquina",
+            "example": "MAQ-001"
+          },
+          "nome": {
+            "type": "string",
+            "description": "Nome da máquina",
+            "example": "Torno CNC"
+          },
+          "tipo": {
+            "type": "string",
+            "description": "Tipo da máquina",
+            "example": "Torno"
+          },
+          "modelo": {
+            "type": "string",
+            "description": "Modelo da máquina",
+            "example": "CNC-5000"
+          },
+          "fabricante": {
+            "type": "string",
+            "description": "Fabricante da máquina",
+            "example": "Romi"
+          },
+          "capacidade": {
+            "type": "string",
+            "description": "Capacidade da máquina",
+            "example": "500kg"
+          }
+        },
+        "required": [
+          "codigo",
+          "nome",
+          "tipo",
+          "modelo",
+          "fabricante"
+        ]
+      },
+      "UpdateMaquinaDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "description": "Código da máquina",
+            "example": "MAQ-001"
+          },
+          "nome": {
+            "type": "string",
+            "description": "Nome da máquina",
+            "example": "Torno CNC"
+          },
+          "tipo": {
+            "type": "string",
+            "description": "Tipo da máquina",
+            "example": "Torno"
+          },
+          "modelo": {
+            "type": "string",
+            "description": "Modelo da máquina",
+            "example": "CNC-5000"
+          },
+          "fabricante": {
+            "type": "string",
+            "description": "Fabricante da máquina",
+            "example": "Romi"
+          },
+          "capacidade": {
+            "type": "string",
+            "description": "Capacidade da máquina",
+            "example": "500kg"
+          }
+        }
       }
     }
   }

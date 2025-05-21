@@ -42,14 +42,15 @@ export class AuthController {
   @ApiBody({ type: LoginDto })
   @ApiResponse({ status: 200, description: 'Login realizado com sucesso.' })
   @ApiResponse({ status: 401, description: 'Credenciais inválidas.' })
-  async login(@Body() loginDto: LoginDto) {
+  async login(@Body() loginDto: LoginDto,@Request() req) {
+    
     const auth = await this.authService.validateUser(loginDto.code, loginDto.password);
     return this.authService.login(auth);
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('funcionario', 'gestor')
+  @Roles('funcionario', 'gestao')
   @ApiBearerAuth() // Adiciona suporte a Bearer Token no Swagger
   @ApiOperation({ summary: 'Obter informações do usuário autenticado' })
   @ApiResponse({ status: 200, description: 'Informações do usuário retornadas com sucesso.' })

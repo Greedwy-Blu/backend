@@ -5,6 +5,7 @@ import { EntityManager } from '@mikro-orm/core';
 import { Gestao } from './entities/gestor.entity';
 import { CreateGestorDto } from './dto/create-gestor.dto';
 import { UpdateGestorDto } from './dto/update-gestor.dto';
+import * as bcrypt from 'bcrypt'; // Importar bcrypt
 
 @Injectable()
 export class GestaoService {
@@ -24,8 +25,16 @@ export class GestaoService {
     gestao.department = createGestaoDto.department;
     gestao.role = createGestaoDto.role;
 
+    // Hash da senha antes de salvar
+    const saltRounds = 10;
+    gestao.password = await bcrypt.hash(createGestaoDto.password, saltRounds);
+
     // Persiste e sincroniza a entidade com o banco de dados
     await this.em.persistAndFlush(gestao);
+
+    // Remover a password da resposta por segurança (embora já esteja hidden na entidade)
+    delete gestao.password;
+
     return gestao;
   }
 
@@ -61,7 +70,17 @@ export class GestaoService {
       gestao.role = updateGestaoDto.role;
     }
 
+    // Hash da nova senha, se fornecida
+    if (updateGestaoDto.password) {
+      const saltRounds = 10;
+      gestao.password = await bcrypt.hash(updateGestaoDto.password, saltRounds);
+    }
+
     await this.em.flush(); // Use o EntityManager para sincronizar as alterações
+
+    // Remover a password da resposta por segurança
+    delete gestao.password;
+
     return gestao;
   }
 

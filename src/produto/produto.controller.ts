@@ -32,7 +32,7 @@ export class ProductsController {
 
   @Post()
    // Protege a rota com JWT e Roles
-  @Roles('gestor') // Apenas gestores podem criar produtos
+  @Roles('gestao') // Apenas gestores podem criar produtos
   @ApiOperation({ summary: 'Criar um novo produto' })
   @ApiResponse({
     status: 201,
@@ -41,16 +41,13 @@ export class ProductsController {
   @ApiBody({ type: CreateProductDto })
   async create(@Body() createProductDto: CreateProductDto, @Request() req) {
 
-     const isValid = await this.authService.validateToken(req.user);
-        if (!isValid) {
-          throw new UnauthorizedException('Token inválido ou expirado');
-        }
+     
     
     return this.productsService.create(createProductDto);
   }
 
   @Get()
-  @Roles('gestor', 'funcionario') // Gestores e funcionários podem listar produtos
+  @Roles('gestao', 'funcionario') // Gestores e funcionários podem listar produtos
   @ApiOperation({ summary: 'Listar todos os produtos' })
   @ApiResponse({
     status: 200,
@@ -61,7 +58,7 @@ export class ProductsController {
   }
 
   @Get(':id')
-  @Roles('gestor', 'funcionario') // Gestores e funcionários podem buscar um produto por ID
+  @Roles('gestao', 'funcionario') // Gestores e funcionários podem buscar um produto por ID
   @ApiOperation({ summary: 'Buscar um produto por ID' })
   @ApiResponse({
     status: 200,
@@ -69,15 +66,12 @@ export class ProductsController {
   })
   @ApiParam({ name: 'id', description: 'ID do produto', example: 1 })
   async findOne(@Param('id') id: number, @Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+   
     return this.productsService.findOne(id);
   }
 
   @Put(':id')
-  @Roles('gestor') // Apenas gestores podem atualizar produtos
+  @Roles('gestao') // Apenas gestores podem atualizar produtos
   @ApiOperation({ summary: 'Atualizar um produto existente' })
   @ApiResponse({
     status: 200,
@@ -89,15 +83,12 @@ export class ProductsController {
     @Param('id') id: number,
     @Body() updateProductDto: UpdateProductDto, @Request() req
   ) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+    
     return this.productsService.update(id, updateProductDto);
   }
 
   @Delete(':id')
-  @Roles('gestor') // Apenas gestores podem excluir produtos
+  @Roles('gestao') // Apenas gestores podem excluir produtos
   @ApiOperation({ summary: 'Excluir um produto' })
   @ApiResponse({
     status: 200,
@@ -105,10 +96,7 @@ export class ProductsController {
   })
   @ApiParam({ name: 'id', description: 'ID do produto', example: 1 })
   async remove(@Param('id') id: number, @Request() req) {
-    const isValid = await this.authService.validateToken(req.user);
-    if (!isValid) {
-      throw new UnauthorizedException('Token inválido ou expirado');
-    }
+   
     return this.productsService.remove(id);
   }
 }

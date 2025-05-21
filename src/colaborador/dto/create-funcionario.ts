@@ -21,4 +21,10 @@ export class CreateFuncionarioDto {
   @IsNumber()
   @IsNotEmpty()
   salario: number;
+
+  @ApiProperty({ description: 'Senha para acesso do funcionário', minLength: 6 })
+  @IsString()
+  @IsNotEmpty()
+  // @MinLength(6) // Descomentar se quiser impor um tamanho mínimo
+  password: string;
 }
