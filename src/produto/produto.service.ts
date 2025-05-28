@@ -22,7 +22,11 @@ export class ProdutoService {
   }
 
   async findAll(): Promise<Product[]> {
-    return this.productRepository.findAll();
+    const connection = this.em.getConnection();
+     const result = await connection.execute('SELECT * FROM product');
+     
+     // Converter os resultados brutos para instâncias da entidade
+     return result.map(item => this.em.map(Product, item));
   }
 
   // Retorna um produto pelo ID

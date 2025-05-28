@@ -1,25 +1,34 @@
-// src/ordem/orders.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException,Logger } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/core';
-import { EntityManager } from '@mikro-orm/postgresql'; // Importe o EntityManager
+import { EntityRepository, Loaded } from '@mikro-orm/core';
+import { EntityManager } from '@mikro-orm/postgresql';
 import { Order } from './entities/order.entity';
 import { OrderTracking } from './entities/order-tracking.entity';
 import { Funcionario } from '../colaborador/entities/funcionario.entity';
 import { Product } from '../produto/entities/produto.entity';
-import { Maquina } from '../maquina/entities/maquina.entity'; // Importar a entidade Maquina
-import { CreateOrderDto } from './dto/create-order.dto';
-import { TrackOrderDto } from './dto/track-order.dto';
+import { Maquina } from '../maquina/entities/maquina.entity';
 import { Etapa } from './entities/etapa.entity';
 import { HistoricoProducao } from './entities/historico-producao.entity';
 import { MotivoInterrupcao } from './entities/motivo-interrupcao.entity';
+
+// DTOs
+import { CreateOrderDto } from './dto/create-order.dto';
+import { TrackOrderDto } from './dto/track-order.dto';
 import { CreateMotivoInterrupcaoDto } from './dto/create-motivointerrupcao.dto';
 import { UpdateMotivoInterrupcaoDto } from './dto/update-motivointerrupcao.dto';
 import { CreateHistoricoProducaoDto } from './dto/create-historico.dto';
 import { UpdateHistoricoProducaoDto } from './dto/update-historico.dto';
 
+// Tipos e constantes
+type OrderStatus = 'aberto' | 'em_andamento' | 'interrompido' | 'finalizado';
+const VALID_STATUSES: OrderStatus[] = ['aberto', 'em_andamento', 'interrompido', 'finalizado'];
+type PopulatedOrderFields = 'product' | 'funcionarioResposavel' | 'etapas' | 'trackings' | 'maquina';
+
 @Injectable()
 export class OrdersService {
+    private readonly logger = new Logger(OrdersService.name);
+
+
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: EntityRepository<Order>,
@@ -35,376 +44,599 @@ export class OrdersService {
     private readonly motivoRepository: EntityRepository<MotivoInterrupcao>,
     @InjectRepository(HistoricoProducao)
     private readonly historicoProducaoRepository: EntityRepository<HistoricoProducao>,
-    @InjectRepository(Maquina) // Injetar o repositório de Maquina
+    @InjectRepository(Maquina)
     private readonly maquinaRepository: EntityRepository<Maquina>,
-    private readonly em: EntityManager, // Injete o EntityManager
+    private readonly em: EntityManager,
   ) {}
 
-
-  async findAll(): Promise<Order[]> {
-    return this.orderRepository.findAll({ populate: ['product', 'funcionarioResposavel', 'maquina'] });
-  }
-  
-  async findOne(id: number): Promise<Order> {
-    const order = await this.orderRepository.findOne(id, {
-      populate: ['product', 'funcionarioResposavel', 'etapas', 'trackings', 'maquina'],
+  /**
+   * Busca todas as ordens com seus relacionamentos
+   */
+  async findAll(): Promise<Loaded<Order, 'product' | 'funcionarioResposavel' | 'maquina'  >[]> {
+    return this.orderRepository.findAll({ 
+      populate: ['product', 'funcionarioResposavel', 'maquina', ] 
     });
-    if (!order) {
-      throw new NotFoundException('Pedido não encontrado.');
-    }
-    return order;
   }
-
-  // Cria um novo pedido
-  async create(createOrderDto: CreateOrderDto): Promise<Order> {
-    const product = await this.productRepository.findOne({ code: createOrderDto.productCode });
-    if (!product) {
-      throw new NotFoundException('Produto não encontrado.');
-    }
   
-    const funcionario = await this.funcionariosRepository.findOne({ code: createOrderDto.employeeCode });
-    if (!funcionario) {
-      throw new NotFoundException('Funcionário não encontrado.');
+  /**
+   * Busca uma ordem específica pelo ID
+   * @throws NotFoundException se a ordem não for encontrada
+   */
+  async findOne(id: number): Promise<Loaded<Order, PopulatedOrderFields>> {
+  const populateFields: PopulatedOrderFields[] = [
+    'product',
+    'funcionarioResposavel',
+    'etapas',
+    'trackings',
+    'maquina'
+  ];
+  
+  const order = await this.orderRepository.findOne(id, {
+    populate: populateFields
+  });
+  
+  if (!order) {
+    throw new NotFoundException(`Pedido com ID ${id} não encontrado.`);
+  }
+  
+  return order;
+}
+
+  /**
+   * Cria uma nova ordem de produção
+   * @throws NotFoundException se produto, funcionário ou máquina não forem encontrados
+   */
+  async create(createOrderDto: CreateOrderDto): Promise<Order> {
+    // Validações iniciais
+    if (!createOrderDto.productCode) {
+      throw new BadRequestException('Código do produto é obrigatório.');
     }
-    
-    // Buscar a máquina pelo código, se fornecido
+
+    // Busca as entidades relacionadas
+    const [product, funcionario] = await Promise.all([
+      this.productRepository.findOne({ code: createOrderDto.productCode }),
+      this.funcionariosRepository.findOne({ code: createOrderDto.employeeCode }),
+    ]);
+
+    if (!product) {
+      throw new NotFoundException(`Produto com código ${createOrderDto.productCode} não encontrado.`);
+    }
+
+    if (!funcionario) {
+      throw new NotFoundException(`Funcionário com código ${createOrderDto.employeeCode} não encontrado.`);
+    }
+
+    // Busca máquina se fornecida
     let maquina: Maquina | null = null;
     if (createOrderDto.maquinaCodigo) {
-      maquina = await this.maquinaRepository.findOne({ codigo: createOrderDto.maquinaCodigo });
+      maquina = await this.maquinaRepository.findOne({ 
+        codigo: createOrderDto.maquinaCodigo 
+      });
+      
       if (!maquina) {
-        throw new NotFoundException(`Máquina com código ${createOrderDto.maquinaCodigo} não encontrada.`);
+        throw new NotFoundException(
+          `Máquina com código ${createOrderDto.maquinaCodigo} não encontrada.`
+        );
       }
     }
-  
-    // Cria o pedido com todos os campos obrigatórios
+
+    // Cria a ordem
     const order = this.orderRepository.create({
-      orderNumber: `OP-${Date.now()}`, // Gera um número de ordem único
-      name: `Pedido ${Date.now()}`, // Nome do pedido (pode ser personalizado)
-      product, // Produto associado
-      funcionarioResposavel: funcionario, // Funcionário responsável
-      maquina, // Máquina associada (pode ser undefined)
-      lotQuantity: createOrderDto.lotQuantity, // Quantidade do lote
-      finalDestination: createOrderDto.finalDestination, // Destino final
-      status: 'aberto', // Status inicial do pedido
-      created_at: new Date(), // Data de criação
-      updated_at: new Date(), // Data de atualização
+      orderNumber: `OP-${Date.now()}`,
+      name: `Pedido ${Date.now()}`,
+      product,
+      funcionarioResposavel: funcionario,
+      maquina,
+      lotQuantity: createOrderDto.lotQuantity,
+      finalDestination: createOrderDto.finalDestination,
+      status: 'aberto',
+      created_at: new Date(),
+      updated_at: new Date(),
     });
-  
-    await this.em.persistAndFlush(order); // Persiste o pedido no banco de dados
+
+    await this.em.persistAndFlush(order);
     return order;
   }
-  // Inicia o rastreamento de uma ordem
+
+  /**
+   * Inicia o rastreamento de uma ordem
+   * @throws NotFoundException se ordem ou funcionário não forem encontrados
+   */
   async startTracking(trackOrderDto: TrackOrderDto): Promise<OrderTracking> {
-    const order = await this.orderRepository.findOne(trackOrderDto.orderId);
+    const [order, funcionario] = await Promise.all([
+      this.orderRepository.findOne(trackOrderDto.orderId),
+      this.funcionariosRepository.findOne({ code: trackOrderDto.employeeCode }),
+    ]);
+
     if (!order) {
-      throw new NotFoundException('Ordem não encontrada.');
+      throw new NotFoundException(`Ordem com ID ${trackOrderDto.orderId} não encontrada.`);
     }
 
-    const funcionario = await this.funcionariosRepository.findOne({ code: trackOrderDto.employeeCode });
     if (!funcionario) {
-      throw new NotFoundException('Funcionário não encontrado.');
+      throw new NotFoundException(
+        `Funcionário com código ${trackOrderDto.employeeCode} não encontrado.`
+      );
     }
 
     const tracking = this.orderTrackingRepository.create({
       order,
       funcionarios: funcionario,
-      startTime: new Date(), // Define a hora de início como o momento atual
+      startTime: new Date(),
     });
 
-    await this.em.persistAndFlush(tracking); // Persiste o rastreamento no banco de dados
+    await this.em.persistAndFlush(tracking);
     return tracking;
   }
 
-  // Finaliza o rastreamento de uma ordem
-  async endTracking(trackingId: number, trackOrderDto: TrackOrderDto): Promise<OrderTracking> {
+  /**
+   * Finaliza o rastreamento de uma ordem
+   * @throws NotFoundException se o rastreamento não for encontrado
+   */
+  async endTracking(
+    trackingId: number, 
+    trackOrderDto: Required<Pick<TrackOrderDto, 'processedQuantity' | 'lostQuantity'>>
+  ): Promise<OrderTracking> {
+    if (trackOrderDto.processedQuantity < 0) {
+      throw new BadRequestException('Quantidade processada não pode ser negativa.');
+    }
+
+    if (trackOrderDto.lostQuantity < 0) {
+      throw new BadRequestException('Quantidade perdida não pode ser negativa.');
+    }
+
     const tracking = await this.orderTrackingRepository.findOne(trackingId);
+    
     if (!tracking) {
-      throw new NotFoundException('Rastreamento não encontrado.');
+      throw new NotFoundException(`Rastreamento com ID ${trackingId} não encontrado.`);
     }
 
-    tracking.endTime = new Date(); // Define a hora de término como o momento atual
-    tracking.lostQuantity = trackOrderDto.lostQuantity; // Atualiza a quantidade de peças perdidas
-    tracking.processedQuantity = trackOrderDto.processedQuantity; // Atualiza a quantidade de peças processadas
+    tracking.endTime = new Date();
+    tracking.lostQuantity = trackOrderDto.lostQuantity;
+    tracking.processedQuantity = trackOrderDto.processedQuantity;
 
-    await this.em.flush(); // Sincroniza as alterações no banco de dados
+    await this.em.flush();
     return tracking;
   }
 
-  // Gera um relatório de uma ordem
+  /**
+   * Gera um relatório detalhado de uma ordem
+   */
   async getOrderReport(orderId: number) {
-    const order = await this.orderRepository.findOne(orderId, { populate: ['trackings', 'maquina'] });
-    if (!order) {
-      throw new NotFoundException('Ordem não encontrada.');
-    }
-
-    // Calcula a eficiência do pedido
-    const totalProcessed = order.trackings.getItems().reduce((sum, tracking) => sum + (tracking.processedQuantity || 0), 0);
-    const totalLost = order.trackings.getItems().reduce((sum, tracking) => sum + (tracking.lostQuantity || 0), 0);
-    const efficiency = ((totalProcessed - totalLost) / totalProcessed) * 100;
+    const order = await this.findOne(orderId);
+    
+    // Cálculo de métricas
+    const trackings = order.trackings.getItems();
+    const totalProcessed = trackings.reduce(
+      (sum, tracking) => sum + (tracking.processedQuantity || 0), 0
+    );
+    const totalLost = trackings.reduce(
+      (sum, tracking) => sum + (tracking.lostQuantity || 0), 0
+    );
+    
+    const efficiency = totalProcessed > 0 
+      ? ((totalProcessed - totalLost) / totalProcessed) * 100 
+      : 0;
 
     return {
       orderNumber: order.orderNumber,
       product: order.product.name,
       lotQuantity: order.lotQuantity,
       finalDestination: order.finalDestination,
+      status: order.status,
       maquina: order.maquina ? {
         codigo: order.maquina.codigo,
         nome: order.maquina.nome,
         tipo: order.maquina.tipo
       } : null,
-      efficiency: efficiency.toFixed(2) + '%', // Eficiência em porcentagem
-      trackings: order.trackings.getItems().map((tracking) => ({
-        funcionarios: tracking.funcionarios.nome,
+      efficiency: efficiency.toFixed(2) + '%',
+      totalProcessed,
+      totalLost,
+      trackings: trackings.map((tracking) => ({
+        funcionario: tracking.funcionarios.nome,
         startTime: tracking.startTime,
         endTime: tracking.endTime,
+        duration: tracking.endTime 
+          ? this.calculateDuration(tracking.startTime, tracking.endTime)
+          : null,
         processedQuantity: tracking.processedQuantity,
         lostQuantity: tracking.lostQuantity,
       })),
     };
   }
 
-  // Cria uma nova etapa para uma ordem
-  async createEtapa(orderId: number, nome: string, funcionarioCode: string): Promise<Etapa> {
-    const order = await this.orderRepository.findOne(orderId);
+  /**
+   * Cria uma nova etapa para uma ordem
+   * @throws NotFoundException se ordem ou funcionário não forem encontrados
+   */
+ async createEtapa(
+    orderId: number,
+    nome: string,
+    funcionarioCode: string
+  ): Promise<Etapa> {
+    const [order, funcionario] = await Promise.all([
+      this.orderRepository.findOne(orderId),
+      this.funcionariosRepository.findOne({ code: funcionarioCode }),
+    ]);
+
     if (!order) {
-      throw new NotFoundException('Ordem não encontrada.');
+      throw new NotFoundException(`Ordem com ID ${orderId} não encontrada.`);
     }
 
-    const funcionario = await this.funcionariosRepository.findOne({ code: funcionarioCode });
     if (!funcionario) {
-      throw new NotFoundException('Funcionário não encontrado.');
+      throw new NotFoundException(`Funcionário com código ${funcionarioCode} não encontrado.`);
     }
 
     const etapa = this.etapaRepository.create({
       nome,
       order,
       funcionario,
+     inicio: null,
+     fim: null,
     });
 
-    await this.em.persistAndFlush(etapa); // Persiste a etapa no banco de dados
+    await this.em.persistAndFlush(etapa);
     return etapa;
   }
 
-  // Inicia uma etapa
+
+  /**
+   * Inicia uma etapa de produção
+   * @throws NotFoundException se a etapa não for encontrada
+   */
   async startEtapa(etapaId: number): Promise<Etapa> {
     const etapa = await this.etapaRepository.findOne(etapaId);
+    
     if (!etapa) {
-      throw new NotFoundException('Etapa não encontrada.');
+      throw new NotFoundException(`Etapa com ID ${etapaId} não encontrada.`);
     }
 
-    etapa.inicio = new Date(); // Define a hora de início como o momento atual
-    await this.em.flush(); // Sincroniza as alterações no banco de dados
+    if (etapa.inicio) {
+      throw new BadRequestException('Esta etapa já foi iniciada.');
+    }
+
+    etapa.inicio = new Date();
+   
+    
+    await this.em.flush();
     return etapa;
   }
 
-  // Finaliza uma etapa
+  /**
+   * Finaliza uma etapa de produção
+   * @throws NotFoundException se a etapa não for encontrada
+   */
   async endEtapa(etapaId: number): Promise<Etapa> {
     const etapa = await this.etapaRepository.findOne(etapaId);
+    
     if (!etapa) {
-      throw new NotFoundException('Etapa não encontrada.');
+      throw new NotFoundException(`Etapa com ID ${etapaId} não encontrada.`);
     }
 
-    etapa.fim = new Date(); // Define a hora de término como o momento atual
-    await this.em.flush(); // Sincroniza as alterações no banco de dados
+    if (!etapa.inicio) {
+      throw new BadRequestException('Esta etapa ainda não foi iniciada.');
+    }
+
+    if (etapa.fim) {
+      throw new BadRequestException('Esta etapa já foi finalizada.');
+    }
+
+    etapa.fim = new Date();
+   
+    
+    
+    await this.em.flush();
     return etapa;
   }
 
-  // Lista todas as etapas de uma ordem
+  /**
+   * Lista etapas de uma ordem
+   * @throws NotFoundException se a ordem não for encontrada
+   */
   async listEtapasByOrder(orderId: number): Promise<Etapa[]> {
     const order = await this.orderRepository.findOne(orderId, { populate: ['etapas'] });
+    
     if (!order) {
-      throw new NotFoundException('Ordem não encontrada.');
+      throw new NotFoundException(`Ordem com ID ${orderId} não encontrada.`);
     }
 
-    return order.etapas.getItems(); // Retorna as etapas associadas à ordem
+    return order.etapas.getItems();
   }
 
-  // Atualiza o status de um pedido
-  async atualizarStatusPedido(pedidoId: number, status: string, motivoId?: number): Promise<Order> {
-    // Busca o pedido pelo ID
-    const pedido = await this.orderRepository.findOne(pedidoId, { populate: ['funcionarioResposavel'] });
-    if (!pedido) {
-      throw new NotFoundException('Pedido não encontrado.');
+  /**
+   * Atualiza o status de um pedido com validações
+   * @throws NotFoundException se pedido ou motivo não forem encontrados
+   * @throws BadRequestException para transições de status inválidas
+   */
+  async atualizarStatusPedido(
+  pedidoId: number, 
+  status: string,
+  motivoId?: number
+): Promise<Order> {
+  // First validate the input status
+  const statusValidado = this.validarStatus(status);
+
+  // Then load the order with necessary relations
+  const pedido = await this.orderRepository.findOne(pedidoId, { 
+    populate: ['funcionarioResposavel', 'etapas', 'trackings'] 
+  });
+  
+  if (!pedido) {
+    throw new NotFoundException(`Pedido com ID ${pedidoId} não encontrado.`);
+  }
+
+  // TypeScript now knows both status values are OrderStatus
+  this.validateStatusTransition(
+    pedido.status as OrderStatus,
+    statusValidado,
+    motivoId,
+    pedido.etapas.getItems()
+  );
+
+  if (statusValidado === 'interrompido') {
+    if (motivoId === undefined) {
+      throw new BadRequestException('Motivo de interrupção é obrigatório.');
     }
-  
-    // Verifica se o status é válido
-    const statusValidos = ['aberto', 'em_andamento', 'interrompido', 'finalizado'];
-    if (!statusValidos.includes(status)) {
-      throw new NotFoundException('Status inválido.');
+
+    const motivo = await this.motivoRepository.findOne({ id: motivoId });
+    if (!motivo) {
+      throw new NotFoundException(`Motivo com ID ${motivoId} não encontrado.`);
     }
-  
-    // Atualiza o status do pedido
-    pedido.status = status;
-  
-    // Se o status for "interrompido", registra o motivo no histórico
-    if (status === 'interrompido') {
-      if (!motivoId) {
-        throw new NotFoundException('Motivo de interrupção é obrigatório.');
+
+    await this.registrarHistorico(
+      pedido,
+      pedido.funcionarioResposavel,
+      'Pedido interrompido',
+      `Motivo: ${motivo.descricao}`,
+      motivo
+    );
+  }
+
+  pedido.status = statusValidado;
+  pedido.updated_at = new Date();
+
+  await this.em.flush();
+  return pedido;
+}
+
+  /**
+   * Valida a transição de status
+   */
+  private validateStatusTransition(
+    currentStatus: OrderStatus,
+    newStatus: OrderStatus,
+    motivoId: number | undefined,
+    etapas: Etapa[]
+  ): void {
+    // Pedidos finalizados não podem ser alterados
+    if (currentStatus === 'finalizado') {
+      throw new BadRequestException('Pedido finalizado não pode ter seu status alterado.');
+    }
+
+    // Validação para status 'interrompido'
+    if (newStatus === 'interrompido' && motivoId === undefined) {
+      throw new BadRequestException('Motivo de interrupção é obrigatório.');
+    }
+
+    // Validação para transição para 'em_andamento'
+    if (newStatus === 'em_andamento' && currentStatus === 'aberto') {
+      const etapasObrigatorias = ['Preparação', 'Produção'];
+      const etapasCriadas = etapas.map(e => e.nome);
+      
+      const faltantes = etapasObrigatorias.filter(e => !etapasCriadas.includes(e));
+      if (faltantes.length > 0) {
+        throw new BadRequestException(
+          `Etapas obrigatórias faltantes: ${faltantes.join(', ')}`
+        );
       }
-  
-      const motivo = await this.motivoRepository.findOne(motivoId);
-      if (!motivo) {
-        throw new NotFoundException('Motivo de interrupção não encontrado.');
-      }
-  
-      // Cria um novo registro no histórico de produção
-      const historico = this.historicoProducaoRepository.create({
-        pedido,
-        funcionario: pedido.funcionarioResposavel, // Funcionário responsável pelo pedido
-        acao: 'Pedido interrompido',
-        detalhes: `Motivo: ${motivo.descricao}`,
-        motivo_interrupcao: motivo,
-        data_hora: new Date(), // Data e hora da ação
-      });
-  
-      await this.em.persistAndFlush(historico); // Persiste o histórico no banco de dados
     }
-  
-    // Atualiza a data de atualização do pedido
-    pedido.updated_at = new Date();
-  
-    // Sincroniza as alterações no banco de dados
-    await this.em.flush();
-    return pedido;
   }
 
- 
-  
-  async listMotivosInterrupcao(): Promise<MotivoInterrupcao[]> {
-    return this.motivoRepository.findAll();
+  /**
+   * Registra um evento no histórico de produção
+   */
+  private async registrarHistorico(
+    pedido: Order,
+    funcionario: Funcionario,
+    acao: string,
+    detalhes: string,
+    motivo?: MotivoInterrupcao
+  ): Promise<HistoricoProducao> {
+    const historico = this.historicoProducaoRepository.create({
+      pedido,
+      funcionario,
+      acao,
+      detalhes,
+      motivo_interrupcao: motivo,
+      data_hora: new Date(),
+    });
+
+    await this.em.persistAndFlush(historico);
+    return historico;
   }
+
+  /**
+   * Lista todos os motivos de interrupção
+   */
+  async listMotivosInterrupcao(): Promise<Loaded<MotivoInterrupcao>[]> {
+      const connection = this.em.getConnection();
+  const result = await connection.execute('SELECT * FROM motivo_interrupcao');
   
-  async createMotivoInterrupcao(createMotivoInterrupcaoDto: CreateMotivoInterrupcaoDto): Promise<MotivoInterrupcao> {
+  // Converter os resultados brutos para instâncias da entidade
+  return result.map(item => this.em.map(MotivoInterrupcao, item));
+  }
+  /**
+   * Cria um novo motivo de interrupção
+   */
+  async createMotivoInterrupcao(
+    createMotivoInterrupcaoDto: CreateMotivoInterrupcaoDto
+  ): Promise<MotivoInterrupcao> {
     const motivo = this.motivoRepository.create(createMotivoInterrupcaoDto);
     await this.em.persistAndFlush(motivo);
     return motivo;
   }
 
-  async createHistoricoProducao(createHistoricoProducaoDto: CreateHistoricoProducaoDto): Promise<HistoricoProducao> {
-    // Busca o pedido pelo ID
-    const pedido = await this.orderRepository.findOne(createHistoricoProducaoDto.pedidoId);
+  /**
+   * Cria um registro no histórico de produção
+   */
+  async createHistoricoProducao(
+    createHistoricoProducaoDto: CreateHistoricoProducaoDto
+  ): Promise<HistoricoProducao> {
+    const [pedido, funcionario] = await Promise.all([
+      this.orderRepository.findOne(createHistoricoProducaoDto.pedidoId),
+      this.funcionariosRepository.findOne(createHistoricoProducaoDto.funcionarioId),
+    ]);
+
     if (!pedido) {
-      throw new NotFoundException('Pedido não encontrado.');
+      throw new NotFoundException(
+        `Pedido com ID ${createHistoricoProducaoDto.pedidoId} não encontrado.`
+      );
     }
-  
-    // Busca o funcionário pelo ID
-    const funcionario = await this.funcionariosRepository.findOne(createHistoricoProducaoDto.funcionarioId);
+
     if (!funcionario) {
-      throw new NotFoundException('Funcionário não encontrado.');
+      throw new NotFoundException(
+        `Funcionário com ID ${createHistoricoProducaoDto.funcionarioId} não encontrado.`
+      );
     }
-  
-    // Busca o motivo de interrupção pelo ID (se fornecido)
-    let motivoInterrupcao: MotivoInterrupcao | undefined;
-    if (createHistoricoProducaoDto.motivoInterrupcaoId) {
-      const motivo = await this.motivoRepository.findOne(createHistoricoProducaoDto.motivoInterrupcaoId);
-      if (!motivo) {
-        throw new NotFoundException('Motivo de interrupção não encontrado.');
+
+    // Busca motivo se fornecido
+    let motivo: MotivoInterrupcao | undefined = undefined;
+    if (createHistoricoProducaoDto.motivoInterrupcaoId !== undefined) {
+      const motivoEncontrado = await this.motivoRepository.findOne({ 
+        id: createHistoricoProducaoDto.motivoInterrupcaoId 
+      });
+      
+      if (!motivoEncontrado) {
+        throw new NotFoundException(
+          `Motivo com ID ${createHistoricoProducaoDto.motivoInterrupcaoId} não encontrado.`
+        );
       }
-      motivoInterrupcao = motivo; // Atribui o motivo encontrado
+      motivo = motivoEncontrado;
     }
-  
-    // Cria o registro no histórico de produção
+
     const historico = this.historicoProducaoRepository.create({
       pedido,
       funcionario,
       acao: createHistoricoProducaoDto.acao,
       detalhes: createHistoricoProducaoDto.detalhes,
-      motivo_interrupcao: motivoInterrupcao, // Pode ser undefined
+      motivo_interrupcao: motivo,
       data_hora: new Date(),
     });
-  
-    await this.em.persistAndFlush(historico); // Persiste o registro no banco de dados
+
+    await this.em.persistAndFlush(historico);
     return historico;
   }
 
-  // 2. Atualizar um registro no histórico de produção
+  /**
+   * Atualiza um registro no histórico de produção
+   */
   async updateHistoricoProducao(
     id: number,
     updateHistoricoProducaoDto: UpdateHistoricoProducaoDto,
   ): Promise<HistoricoProducao> {
-    // Busca o registro de histórico de produção pelo ID
     const historico = await this.historicoProducaoRepository.findOne(id);
     if (!historico) {
-      throw new NotFoundException('Registro de histórico de produção não encontrado.');
+      throw new NotFoundException(`Histórico com ID ${id} não encontrado.`);
     }
-  
-    // Atualiza o pedido, se fornecido
+
+    // Atualizações condicionais
     if (updateHistoricoProducaoDto.pedidoId !== undefined) {
       const pedido = await this.orderRepository.findOne(updateHistoricoProducaoDto.pedidoId);
       if (!pedido) {
-        throw new NotFoundException('Pedido não encontrado.');
+        throw new NotFoundException(
+          `Pedido com ID ${updateHistoricoProducaoDto.pedidoId} não encontrado.`
+        );
       }
       historico.pedido = pedido;
     }
-  
-    // Atualiza o funcionário, se fornecido
+
     if (updateHistoricoProducaoDto.funcionarioId !== undefined) {
-      const funcionario = await this.funcionariosRepository.findOne(updateHistoricoProducaoDto.funcionarioId);
+      const funcionario = await this.funcionariosRepository.findOne(
+        updateHistoricoProducaoDto.funcionarioId
+      );
       if (!funcionario) {
-        throw new NotFoundException('Funcionário não encontrado.');
+        throw new NotFoundException(
+          `Funcionário com ID ${updateHistoricoProducaoDto.funcionarioId} não encontrado.`
+        );
       }
       historico.funcionario = funcionario;
     }
-  
-    // Atualiza a ação, se fornecida
+
     if (updateHistoricoProducaoDto.acao !== undefined) {
       historico.acao = updateHistoricoProducaoDto.acao;
     }
-  
-    // Atualiza os detalhes, se fornecidos
+
     if (updateHistoricoProducaoDto.detalhes !== undefined) {
       historico.detalhes = updateHistoricoProducaoDto.detalhes;
     }
-  
-    // Atualiza o motivo de interrupção, se fornecido
+
+    // Atualização especial para motivo
     if (updateHistoricoProducaoDto.motivoInterrupcaoId !== undefined) {
       if (updateHistoricoProducaoDto.motivoInterrupcaoId === null) {
-        // Se o motivoInterrupcaoId for explicitamente null, define o motivo_interrupcao como undefined
         historico.motivo_interrupcao = undefined;
       } else {
-        // Busca o motivo de interrupção pelo ID
-        const motivoInterrupcao = await this.motivoRepository.findOne(updateHistoricoProducaoDto.motivoInterrupcaoId);
-        if (!motivoInterrupcao) {
-          throw new NotFoundException('Motivo de interrupção não encontrado.');
+        const motivo = await this.motivoRepository.findOne(
+          updateHistoricoProducaoDto.motivoInterrupcaoId
+        );
+        if (!motivo) {
+          throw new NotFoundException(
+            `Motivo com ID ${updateHistoricoProducaoDto.motivoInterrupcaoId} não encontrado.`
+          );
         }
-        historico.motivo_interrupcao = motivoInterrupcao;
+        historico.motivo_interrupcao = motivo;
       }
     }
-  
-    // Atualiza a data e hora, se fornecida
+
     if (updateHistoricoProducaoDto.dataHora !== undefined) {
       historico.data_hora = updateHistoricoProducaoDto.dataHora;
     }
-  
-    // Sincroniza as alterações no banco de dados
+
     await this.em.flush();
     return historico;
   }
 
-  
+  /**
+   * Lista o histórico de produção de uma ordem
+   */
   async listHistoricoProducao(orderId: number): Promise<HistoricoProducao[]> {
-    const historico = await this.historicoProducaoRepository.find({ pedido: orderId });
-    if (!historico) {
-      throw new NotFoundException('Histórico de produção não encontrado.');
+    const historico = await this.historicoProducaoRepository.find(
+      { pedido: orderId },
+      { populate: ['funcionario', 'motivo_interrupcao'] }
+    );
+    
+    if (!historico || historico.length === 0) {
+      throw new NotFoundException(
+        `Nenhum histórico encontrado para a ordem com ID ${orderId}.`
+      );
     }
+    
     return historico;
   }
-  
- 
-  
+
+  /**
+   * Lista rastreamentos de uma ordem
+   */
   async listRastreamentosByOrder(orderId: number): Promise<OrderTracking[]> {
-    const rastreamentos = await this.orderTrackingRepository.find({ order: orderId });
-    if (!rastreamentos) {
-      throw new NotFoundException('Rastreamentos não encontrados.');
+    const rastreamentos = await this.orderTrackingRepository.find(
+      { order: orderId },
+      { populate: ['funcionarios'] }
+    );
+    
+    if (!rastreamentos || rastreamentos.length === 0) {
+      throw new NotFoundException(
+        `Nenhum rastreamento encontrado para a ordem com ID ${orderId}.`
+      );
     }
+    
     return rastreamentos;
   }
 
-  // Atualizar a máquina de uma ordem
+  /**
+   * Atualiza a máquina associada a uma ordem
+   */
   async atualizarMaquina(orderId: number, maquinaCodigo: string): Promise<Order> {
     const order = await this.orderRepository.findOne(orderId);
     if (!order) {
-      throw new NotFoundException('Ordem não encontrada.');
+      throw new NotFoundException(`Ordem com ID ${orderId} não encontrada.`);
     }
 
     if (maquinaCodigo) {
@@ -414,11 +646,30 @@ export class OrdersService {
       }
       order.maquina = maquina;
     } else {
-      order.maquina = undefined; // Remove a associação com a máquina
+      order.maquina = undefined;
     }
 
     order.updated_at = new Date();
     await this.em.flush();
     return order;
+  }
+
+  /**
+   * Métodos auxiliares
+   */
+  private calculateDuration(start: Date, end: Date): string {
+    const diff = end.getTime() - start.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+  }
+
+  private validarStatus(status: string): OrderStatus {
+    if (!VALID_STATUSES.includes(status as OrderStatus)) {
+      throw new BadRequestException(
+        `Status inválido. Os status permitidos são: ${VALID_STATUSES.join(', ')}`
+      );
+    }
+    return status as OrderStatus;
   }
 }

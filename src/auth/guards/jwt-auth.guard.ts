@@ -74,11 +74,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       throw err || new UnauthorizedException('Não autorizado');
     }
     
-    console.log('Usuário autenticado no handleRequest:', {
-      id: user.id,
-      role: user.role,
-      email: user.email // Adicione outros campos relevantes
-    });
+   
     
     return user;
   }

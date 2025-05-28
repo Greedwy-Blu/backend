@@ -108,9 +108,7 @@
             "name": "id",
             "required": true,
             "in": "path",
-            "description": "ID do rastreamento",
             "schema": {
-              "example": 1,
               "type": "number"
             }
           }
@@ -126,9 +124,6 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Rastreamento finalizado com sucesso."
-          },
           "201": {
             "description": "",
             "content": {
@@ -145,7 +140,6 @@
             "bearer": []
           }
         ],
-        "summary": "Finalizar o rastreamento de uma ordem",
         "tags": [
           "orders"
         ]
@@ -345,7 +339,7 @@
       }
     },
     "/orders/{id}/atualizar-status": {
-      "post": {
+      "put": {
         "operationId": "OrdersController_atualizarStatus",
         "parameters": [
           {
@@ -368,13 +362,23 @@
                 "properties": {
                   "status": {
                     "type": "string",
+                    "enum": [
+                      "aberto",
+                      "em_andamento",
+                      "interrompido",
+                      "finalizado"
+                    ],
                     "example": "em_andamento"
                   },
                   "motivoId": {
                     "type": "number",
-                    "example": 1
+                    "example": 1,
+                    "description": "Obrigatório apenas para status \"interrompido\""
                   }
-                }
+                },
+                "required": [
+                  "status"
+                ]
               }
             }
           }
@@ -382,16 +386,6 @@
         "responses": {
           "200": {
             "description": "Status atualizado com sucesso."
-          },
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Order"
-                }
-              }
-            }
           }
         },
         "security": [
@@ -400,6 +394,42 @@
           }
         ],
         "summary": "Atualizar o status de uma ordem",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/orders/e": {
+      "get": {
+        "operationId": "OrdersController_getMotivosInterrupcao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Motivo criado com sucesso"
+          },
+          "400": {
+            "description": "Dados inválidos"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Criar novo motivo de interrupção",
         "tags": [
           "orders"
         ]
@@ -438,24 +468,6 @@
       }
     },
     "/orders/motivos-interrupcao": {
-      "get": {
-        "operationId": "OrdersController_listMotivosInterrupcao",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Lista de motivos de interrupção retornada com sucesso."
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Listar todos os motivos de interrupção",
-        "tags": [
-          "orders"
-        ]
-      },
       "post": {
         "operationId": "OrdersController_createMotivoInterrupcao",
         "parameters": [],
@@ -471,7 +483,10 @@
         },
         "responses": {
           "201": {
-            "description": "Motivo de interrupção criado com sucesso."
+            "description": "Motivo criado com sucesso"
+          },
+          "400": {
+            "description": "Dados inválidos"
           }
         },
         "security": [
@@ -479,7 +494,7 @@
             "bearer": []
           }
         ],
-        "summary": "Adicionar um novo motivo de interrupção",
+        "summary": "Criar novo motivo de interrupção",
         "tags": [
           "orders"
         ]
@@ -1692,12 +1707,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-20T22:05:55.148Z"
+            "default": "2025-05-28T00:55:13.699Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-20T22:05:55.148Z"
+            "default": "2025-05-28T00:55:13.699Z"
           }
         },
         "required": [
@@ -1741,12 +1756,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-20T22:05:55.134Z"
+            "default": "2025-05-28T00:55:13.697Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-20T22:05:55.134Z"
+            "default": "2025-05-28T00:55:13.697Z"
           }
         },
         "required": [
@@ -1785,12 +1800,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-20T22:05:55.117Z"
+            "default": "2025-05-28T00:55:13.697Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-20T22:05:55.117Z"
+            "default": "2025-05-28T00:55:13.697Z"
           }
         },
         "required": [
@@ -1858,14 +1873,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-20T22:05:55.163Z",
+            "default": "2025-05-28T00:55:13.701Z",
             "description": "Data de criação do registro",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-20T22:05:55.163Z",
+            "default": "2025-05-28T00:55:13.701Z",
             "description": "Data de atualização do registro",
             "example": "2023-10-01T14:00:00Z"
           }
@@ -2063,14 +2078,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-20T22:05:55.107Z",
+            "default": "2025-05-28T00:55:13.696Z",
             "description": "Data de criação do pedido",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-20T22:05:55.107Z",
+            "default": "2025-05-28T00:55:13.696Z",
             "description": "Data de atualização do pedido",
             "example": "2023-10-01T14:00:00Z"
           }
@@ -2198,21 +2213,11 @@
             "type": "string",
             "description": "Senha do usuário",
             "example": "senha123"
-          },
-          "role": {
-            "type": "string",
-            "description": "Papel do usuário",
-            "example": "gestao",
-            "enum": [
-              "funcionario",
-              "gestao"
-            ]
           }
         },
         "required": [
           "code",
-          "password",
-          "role"
+          "password"
         ]
       },
       "LoginDto": {

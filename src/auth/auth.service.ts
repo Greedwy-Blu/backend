@@ -24,53 +24,38 @@ export class AuthService {
     private readonly em: EntityManager,
   ) {}
 
-  async create(createAuthDto: CreateAuthDto) {
-    const { code, password, role } = createAuthDto;
-
-    // Verifica se o código já existe no Auth
-    const existingAuth = await this.authRepository.findOne({ code });
-    if (existingAuth) {
-      throw new UnauthorizedException('Código já está em uso');
-    }
-
-    // Verifica se o código existe no Funcionario ou Gestao
-    if (role === 'funcionario') {
-      const funcionario = await this.funcionarioRepository.findOne({ code });
-      if (!funcionario) {
-        throw new NotFoundException('Funcionário não encontrado');
-      }
-    } else if (role === 'gestao') {
-      const gestor = await this.gestaoRepository.findOne({ code });
-      if (!gestor) {
-        throw new NotFoundException('Gestor não encontrado');
-      }
-    } else {
-      throw new UnauthorizedException('Role inválido');
-    }
-
-   const hashedPassword = await bcrypt.hash(password, 10);
-
-    const auth = new Auth();
-    auth.code = code;
-    auth.password = hashedPassword;
-    auth.role = role;
-
-    if (role === 'funcionario') {
-      const funcionario = await this.funcionarioRepository.findOne({ code });
-      if (funcionario) {
-        auth.funcionario = funcionario; // Associa o Funcionario ao Auth
-      }
-    } else if (role === 'gestao') {
-      const gestor = await this.gestaoRepository.findOne({ code });
-      if (gestor) {
-        auth.gestao = gestor; // Associa o Gestao ao Auth
-      }
-    }
-
-    await this.em.persistAndFlush(auth);
-    return auth;
+ async create(createAuthDto: CreateAuthDto) {
+  const { code, password } = createAuthDto;
+  
+  const existingAuth = await this.authRepository.findOne({ code });
+  if (existingAuth) {
+    throw new UnauthorizedException('Código já está em uso');
   }
 
+  // Busca com tratamento direto do tipo
+  const funcionario = await this.funcionarioRepository.findOne({ code });
+  const gestor = await this.gestaoRepository.findOne({ code });
+
+  if (!funcionario && !gestor) {
+    throw new NotFoundException('Código não encontrado');
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const auth = new Auth();
+  auth.code = code;
+  auth.password = hashedPassword;
+
+  if (funcionario) {
+    auth.role = 'funcionario';
+    auth.funcionario = funcionario;
+  } else if (gestor) {
+    auth.role = 'gestao';
+    auth.gestao = gestor;
+  }
+
+  await this.em.persistAndFlush(auth);
+  return auth;
+}
   async validateUser(code: string, password: string): Promise<Auth> {
       
     const auth = await this.authRepository.findOne(
