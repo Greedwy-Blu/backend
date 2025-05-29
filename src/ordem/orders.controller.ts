@@ -313,7 +313,7 @@ async getMotivosInterrupcao(@Request() req) {
     return this.ordersService.updateHistoricoProducao(id, updateHistoricoProducaoDto);
   }
 
-  @Get(':id/historico-producao')
+  @Get('apontamento-producao/:id')
   @Roles('gestao', 'funcionario')
   @ApiOperation({ summary: 'Listar histórico de produção de um pedido' })
   @ApiResponse({

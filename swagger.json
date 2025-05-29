@@ -577,7 +577,7 @@
         ]
       }
     },
-    "/orders/{id}/historico-producao": {
+    "/orders/apontamento-producao/{id}": {
       "get": {
         "operationId": "OrdersController_listHistoricoProducao",
         "parameters": [
@@ -1707,12 +1707,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-28T00:55:13.699Z"
+            "default": "2025-05-28T23:02:23.225Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-28T00:55:13.699Z"
+            "default": "2025-05-28T23:02:23.225Z"
           }
         },
         "required": [
@@ -1756,12 +1756,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-28T00:55:13.697Z"
+            "default": "2025-05-28T23:02:23.224Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-28T00:55:13.697Z"
+            "default": "2025-05-28T23:02:23.224Z"
           }
         },
         "required": [
@@ -1800,12 +1800,12 @@
           "createdAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-28T00:55:13.697Z"
+            "default": "2025-05-28T23:02:23.223Z"
           },
           "updatedAt": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-28T00:55:13.697Z"
+            "default": "2025-05-28T23:02:23.223Z"
           }
         },
         "required": [
@@ -1873,14 +1873,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-28T00:55:13.701Z",
+            "default": "2025-05-28T23:02:23.227Z",
             "description": "Data de criação do registro",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-28T00:55:13.701Z",
+            "default": "2025-05-28T23:02:23.227Z",
             "description": "Data de atualização do registro",
             "example": "2023-10-01T14:00:00Z"
           }
@@ -2078,14 +2078,14 @@
           "created_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-28T00:55:13.696Z",
+            "default": "2025-05-28T23:02:23.222Z",
             "description": "Data de criação do pedido",
             "example": "2023-10-01T12:00:00Z"
           },
           "updated_at": {
             "format": "date-time",
             "type": "string",
-            "default": "2025-05-28T00:55:13.696Z",
+            "default": "2025-05-28T23:02:23.222Z",
             "description": "Data de atualização do pedido",
             "example": "2023-10-01T14:00:00Z"
           }
