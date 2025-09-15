@@ -119,6 +119,32 @@ interface SectorConfigTable {
   fieldType: string;
 }
 
+interface NotificationTable {
+  id: Generated<number>;
+  userId: number; // Assuming a user is associated with a notification
+  message: string;
+  read: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface BackupTable {
+  id: Generated<number>;
+  filename: string;
+  path: string;
+  size: number;
+  createdAt: Date;
+}
+
+interface AuditTable {
+  id: Generated<number>;
+  userId: number; // Assuming an action is performed by a user
+  action: string;
+  entity: string; // e.g., 'Order', 'Product'
+  entityId: number;
+  timestamp: Date;
+}
+
 interface Database {
   auth: AuthTable;
   funcionario: FuncionarioTable;
@@ -132,6 +158,9 @@ interface Database {
   product: ProductTable;
   sector: SectorTable;
   sector_config: SectorConfigTable;
+  notification: NotificationTable;
+  backup: BackupTable;
+  audit: AuditTable;
 }
 
 export const db = new Kysely<Database>({
