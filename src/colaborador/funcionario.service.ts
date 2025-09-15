@@ -1,49 +1,44 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/core';
-import { EntityManager } from '@mikro-orm/core';
 import { Funcionario } from './entities/funcionario.entity';
 import { CreateFuncionarioDto } from './dto/create-funcionario';
 import { UpdateFuncionarioDto } from './dto/update-funcionario';
-import * as bcrypt from 'bcrypt'; // Importar bcrypt
+import * as bcrypt from 'bcrypt';
+import { db } from '../config/database.config';
 
 @Injectable()
 export class FuncionarioService {
-  constructor(
-    @InjectRepository(Funcionario)
-    private readonly funcionarioRepository: EntityRepository<Funcionario>,
-    private readonly em: EntityManager,
-  ) {}
+  constructor() {}
 
   async create(createFuncionarioDto: CreateFuncionarioDto): Promise<Funcionario> {
-    // Cria uma nova instância da entidade Funcionario
-    const funcionario = new Funcionario();
-    
-    // Atribui os valores do DTO à entidade
-    funcionario.code = createFuncionarioDto.code;
-    funcionario.nome = createFuncionarioDto.nome;
-    funcionario.cargo = createFuncionarioDto.cargo;
-    funcionario.salario = createFuncionarioDto.salario;
+    const { code, nome, cargo, salario, password } = createFuncionarioDto;
 
-    // Hash da senha antes de salvar
-    const saltRounds = 10;
-    funcionario.password = await bcrypt.hash(createFuncionarioDto.password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Persiste e sincroniza a entidade com o banco de dados
-    await this.em.persistAndFlush(funcionario);
+    const newFuncionario = await db.insertInto('funcionario')
+      .values({
+        code,
+        nome,
+        cargo,
+        salario,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
 
-    // Remover a password da resposta por segurança (embora já esteja hidden na entidade)
-    delete funcionario.password;
+    // Note: The password is not stored directly in the funcionario table in the Kysely schema.
+    // It's handled by the Auth table. So, we don't include it here.
+    // If the intention was to store it in funcionario, the schema would need adjustment.
 
-    return funcionario;
+    return newFuncionario;
   }
 
   async findAll(): Promise<Funcionario[]> {
-    return this.funcionarioRepository.findAll();
+    return db.selectFrom('funcionario').selectAll().execute();
   }
 
   async findOne(id: number): Promise<Funcionario> {
-    const funcionario = await this.funcionarioRepository.findOne(id);
+    const funcionario = await db.selectFrom('funcionario').selectAll().where('id', '=', id).executeTakeFirst();
     if (!funcionario) {
       throw new NotFoundException('Funcionário não encontrado');
     }
@@ -51,43 +46,46 @@ export class FuncionarioService {
   }
 
   async update(id: number, updateFuncionarioDto: UpdateFuncionarioDto): Promise<Funcionario> {
-    const funcionario = await this.funcionarioRepository.findOne(id);
+    const funcionario = await db.selectFrom('funcionario').selectAll().where('id', '=', id).executeTakeFirst();
     if (!funcionario) {
       throw new NotFoundException('Funcionário não encontrado');
     }
 
+    const updatedFields: Partial<Funcionario> = {
+      updatedAt: new Date(),
+    };
+
     if (updateFuncionarioDto.code !== undefined) {
-      funcionario.code = updateFuncionarioDto.code;
+      updatedFields.code = updateFuncionarioDto.code;
     }
     if (updateFuncionarioDto.nome !== undefined) {
-      funcionario.nome = updateFuncionarioDto.nome;
+      updatedFields.nome = updateFuncionarioDto.nome;
     }
     if (updateFuncionarioDto.cargo !== undefined) {
-      funcionario.cargo = updateFuncionarioDto.cargo;
+      updatedFields.cargo = updateFuncionarioDto.cargo;
     }
     if (updateFuncionarioDto.salario !== undefined) {
-      funcionario.salario = updateFuncionarioDto.salario;
+      updatedFields.salario = updateFuncionarioDto.salario;
     }
 
-    // Hash da nova senha, se fornecida
-    if (updateFuncionarioDto.password) {
-      const saltRounds = 10;
-      funcionario.password = await bcrypt.hash(updateFuncionarioDto.password, saltRounds);
-    }
+    // Password update should be handled via Auth service if it's in the Auth table
+    // If it's meant to be updated here, the schema and logic need to be adjusted.
 
-    await this.em.flush();
+    const updatedFuncionario = await db.updateTable('funcionario')
+      .set(updatedFields)
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirstOrThrow();
 
-    // Remover a password da resposta por segurança
-    delete funcionario.password;
-
-    return funcionario;
+    return updatedFuncionario;
   }
 
   async remove(id: number): Promise<void> {
-    const funcionario = await this.funcionarioRepository.findOne(id);
-    if (!funcionario) {
+    const { numDeletedRows } = await db.deleteFrom('funcionario').where('id', '=', id).executeTakeFirstOrThrow();
+    if (Number(numDeletedRows) === 0) {
       throw new NotFoundException('Funcionário não encontrado');
     }
-    await this.em.removeAndFlush(funcionario);
   }
 }
+
+

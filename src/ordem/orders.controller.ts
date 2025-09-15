@@ -26,25 +26,18 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { AuthService } from '../auth/auth.service';
 import { CreateMotivoInterrupcaoDto } from './dto/create-motivointerrupcao.dto';
 import { UpdateMotivoInterrupcaoDto } from './dto/update-motivointerrupcao.dto';
 import { UpdateHistoricoProducaoDto } from './dto/update-historico.dto';
 import { CreateHistoricoProducaoDto } from './dto/create-historico.dto';
-import { MotivoInterrupcao } from './entities/motivo-interrupcao.entity';
-import { EntityRepository } from '@mikro-orm/postgresql';
 
 @ApiTags('orders')
 @ApiBearerAuth()
 @Controller('orders')
-@UseGuards(JwtAuthGuard, RolesGuard) // Adicionar JwtAuthGuard
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
-    private readonly authService: AuthService, // Injetar o AuthService@InjectRepository(MotivoInterrupcao)
-       
-       
-
   ) { }
 
   @Post()
@@ -57,8 +50,6 @@ export class OrdersController {
   @ApiBody({ type: CreateOrderDto })
   async create(@Body() createOrderDto: CreateOrderDto, @Request() req) {
     console.log('Usuário autenticado:', req.access_token); // Verifique o objeto user
-
-
     console.log('tonke usuário:', req.access_token); /// Verifique o objeto user
     return this.ordersService.create(createOrderDto);
   }
@@ -72,29 +63,24 @@ export class OrdersController {
   })
   @ApiBody({ type: TrackOrderDto })
   async startTracking(@Body() trackOrderDto: TrackOrderDto, @Request() req) {
-    // Valida o token manualmente (opcional)
-
-
     return this.ordersService.startTracking(trackOrderDto);
   }
 
-  // In your controller
-@Post('end-tracking/:id')
-async endTracking(
-  @Param('id') id: number, 
-  @Body() trackOrderDto: TrackOrderDto,
-  @Request() req
-) {
-  // Validate required fields
-  if (trackOrderDto.processedQuantity === undefined || trackOrderDto.lostQuantity === undefined) {
-    throw new BadRequestException('Both processedQuantity and lostQuantity are required');
-  }
+  @Post('end-tracking/:id')
+  async endTracking(
+    @Param('id') id: number, 
+    @Body() trackOrderDto: TrackOrderDto,
+    @Request() req
+  ) {
+    if (trackOrderDto.processedQuantity === undefined || trackOrderDto.lostQuantity === undefined) {
+      throw new BadRequestException('Both processedQuantity and lostQuantity are required');
+    }
 
-  return this.ordersService.endTracking(id, {
-    processedQuantity: trackOrderDto.processedQuantity,
-    lostQuantity: trackOrderDto.lostQuantity
-  });
-}
+    return this.ordersService.endTracking(id, {
+      processedQuantity: trackOrderDto.processedQuantity,
+      lostQuantity: trackOrderDto.lostQuantity
+    });
+  }
 
   @Get('report/:id')
   @Roles('gestao')
@@ -105,9 +91,6 @@ async endTracking(
   })
   @ApiParam({ name: 'id', description: 'ID da ordem', example: 1 })
   async getOrderReport(@Param('id') id: number, @Request() req) {
-    // Valida o token manualmente (opcional)
-
-
     return this.ordersService.getOrderReport(id);
   }
 
@@ -134,9 +117,6 @@ async endTracking(
     @Body('funcionarioCode') funcionarioCode: string,
     @Request() req,
   ) {
-    // Valida o token manualmente (opcional)
-
-
     return this.ordersService.createEtapa(orderId, nome, funcionarioCode);
   }
 
@@ -149,8 +129,6 @@ async endTracking(
   })
   @ApiParam({ name: 'id', description: 'ID da etapa', example: 1 })
   async startEtapa(@Param('id') etapaId: number, @Request() req) {
-    // Valida o token manualmente (opcional)
-
     return this.ordersService.startEtapa(etapaId);
   }
 
@@ -163,9 +141,6 @@ async endTracking(
   })
   @ApiParam({ name: 'id', description: 'ID da etapa', example: 1 })
   async endEtapa(@Param('id') etapaId: number, @Request() req) {
-    // Valida o token manualmente (opcional)
-
-
     return this.ordersService.endEtapa(etapaId);
   }
 
@@ -178,9 +153,6 @@ async endTracking(
   })
   @ApiParam({ name: 'id', description: 'ID da ordem', example: 1 })
   async listEtapasByOrder(@Param('id') orderId: number, @Request() req) {
-    // Valida o token manualmente (opcional)
-
-
     return this.ordersService.listEtapasByOrder(orderId);
   }
 
@@ -215,7 +187,6 @@ async endTracking(
     @Body() body: { status: string, motivoId?: number },
     @Request() req
   ) {
-    // Verificação adicional de permissões se necessário
     return this.ordersService.atualizarStatusPedido(pedidoId, body.status, body.motivoId);
   }
 
@@ -227,21 +198,17 @@ async endTracking(
     description: 'Lista de pedidos retornada com sucesso.',
   })
   async findAll(@Request() req) {
-
-
     return this.ordersService.findAll();
   }
 
   @Get('e')
-@Roles('gestao', 'funcionario')
-@ApiOperation({ summary: 'Criar novo motivo de interrupção' })
-@ApiResponse({ status: 201, description: 'Motivo criado com sucesso' })
-@ApiResponse({ status: 400, description: 'Dados inválidos' })
-async getMotivosInterrupcao(@Request() req) {
-
- return  this.ordersService.listMotivosInterrupcao()
-   
-}
+  @Roles('gestao', 'funcionario')
+  @ApiOperation({ summary: 'Criar novo motivo de interrupção' })
+  @ApiResponse({ status: 201, description: 'Motivo criado com sucesso' })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  async getMotivosInterrupcao(@Request() req) {
+    return this.ordersService.listMotivosInterrupcao()
+  }
 
   @Get(':id')
   @Roles('gestao', 'funcionario')
@@ -252,15 +219,12 @@ async getMotivosInterrupcao(@Request() req) {
   })
   @ApiResponse({ status: 404, description: 'Pedido não encontrado.' })
   async findOne(@Param('id') id: number, @Request() req) {
-
     const order = await this.ordersService.findOne(id);
     if (!order) {
       throw new NotFoundException('Pedido não encontrado.');
     }
     return order;
   }
-
-
 
   @Post('motivos-interrupcao')
   @Roles('gestao')
@@ -270,8 +234,6 @@ async getMotivosInterrupcao(@Request() req) {
   async createMotivoInterrupcao(@Body() createDto: CreateMotivoInterrupcaoDto) {
     return this.ordersService.createMotivoInterrupcao(createDto);
   }
-
-
 
   @Post('historico-producao')
   @Roles('gestao')
@@ -286,9 +248,6 @@ async getMotivosInterrupcao(@Request() req) {
     @Body() createHistoricoProducaoDto: CreateHistoricoProducaoDto,
     @Request() req,
   ) {
-    // Valida o token manualmente (opcional)
-
-
     return this.ordersService.createHistoricoProducao(createHistoricoProducaoDto);
   }
 
@@ -307,9 +266,6 @@ async getMotivosInterrupcao(@Request() req) {
     @Body() updateHistoricoProducaoDto: UpdateHistoricoProducaoDto,
     @Request() req,
   ) {
-    // Valida o token manualmente (opcional)
-
-
     return this.ordersService.updateHistoricoProducao(id, updateHistoricoProducaoDto);
   }
 
@@ -322,16 +278,12 @@ async getMotivosInterrupcao(@Request() req) {
   })
   @ApiResponse({ status: 404, description: 'Pedido não encontrado.' })
   async listHistoricoProducao(@Param('id') id: number, @Request() req) {
-
-
-    const historico = await this.ordersService.listHistoricoProducao(id);
+    const historico = await this.ordersService.findHistoricoProducaoById(id);
     if (!historico) {
       throw new NotFoundException('Pedido não encontrado.');
     }
     return historico;
   }
-
-
 
   @Get(':id/rastreamentos')
   @Roles('gestor', 'funcionario')
@@ -342,12 +294,11 @@ async getMotivosInterrupcao(@Request() req) {
   })
   @ApiResponse({ status: 404, description: 'Ordem não encontrada.' })
   async listRastreamentosByOrder(@Param('id') orderId: number, @Request() req) {
-
-
-    const rastreamentos = await this.ordersService.listRastreamentosByOrder(orderId);
-    if (!rastreamentos) {
-      throw new NotFoundException('Ordem não encontrada.');
-    }
-    return rastreamentos;
+    // A ordersService não tem um método para listar rastreamentos por ordem diretamente.
+    // Será necessário adicionar um método ao OrdersService ou buscar de outra forma.
+    // Por enquanto, vamos retornar um erro ou um array vazio.
+    throw new NotFoundException('Funcionalidade de listar rastreamentos por ordem ainda não implementada.');
   }
 }
+
+

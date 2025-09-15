@@ -1,7 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException,Logger } from '@nestjs/common';
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository, Loaded } from '@mikro-orm/core';
-import { EntityManager } from '@mikro-orm/postgresql';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { Order } from './entities/order.entity';
 import { OrderTracking } from './entities/order-tracking.entity';
 import { Funcionario } from '../colaborador/entities/funcionario.entity';
@@ -10,6 +7,7 @@ import { Maquina } from '../maquina/entities/maquina.entity';
 import { Etapa } from './entities/etapa.entity';
 import { HistoricoProducao } from './entities/historico-producao.entity';
 import { MotivoInterrupcao } from './entities/motivo-interrupcao.entity';
+import { db } from '../config/database.config';
 
 // DTOs
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -22,65 +20,31 @@ import { UpdateHistoricoProducaoDto } from './dto/update-historico.dto';
 // Tipos e constantes
 type OrderStatus = 'aberto' | 'em_andamento' | 'interrompido' | 'finalizado';
 const VALID_STATUSES: OrderStatus[] = ['aberto', 'em_andamento', 'interrompido', 'finalizado'];
-type PopulatedOrderFields = 'product' | 'funcionarioResposavel' | 'etapas' | 'trackings' | 'maquina';
 
 @Injectable()
 export class OrdersService {
-    private readonly logger = new Logger(OrdersService.name);
+  private readonly logger = new Logger(OrdersService.name);
 
-
-  constructor(
-    @InjectRepository(Order)
-    private readonly orderRepository: EntityRepository<Order>,
-    @InjectRepository(OrderTracking)
-    private readonly orderTrackingRepository: EntityRepository<OrderTracking>,
-    @InjectRepository(Funcionario)
-    private readonly funcionariosRepository: EntityRepository<Funcionario>,
-    @InjectRepository(Product)
-    private readonly productRepository: EntityRepository<Product>,
-    @InjectRepository(Etapa)
-    private readonly etapaRepository: EntityRepository<Etapa>,
-    @InjectRepository(MotivoInterrupcao)
-    private readonly motivoRepository: EntityRepository<MotivoInterrupcao>,
-    @InjectRepository(HistoricoProducao)
-    private readonly historicoProducaoRepository: EntityRepository<HistoricoProducao>,
-    @InjectRepository(Maquina)
-    private readonly maquinaRepository: EntityRepository<Maquina>,
-    private readonly em: EntityManager,
-  ) {}
+  constructor() {}
 
   /**
    * Busca todas as ordens com seus relacionamentos
    */
-  async findAll(): Promise<Loaded<Order, 'product' | 'funcionarioResposavel' | 'maquina'  >[]> {
-    return this.orderRepository.findAll({ 
-      populate: ['product', 'funcionarioResposavel', 'maquina', ] 
-    });
+  async findAll(): Promise<Order[]> {
+    return db.selectFrom('order').selectAll().execute();
   }
-  
+
   /**
    * Busca uma ordem específica pelo ID
    * @throws NotFoundException se a ordem não for encontrada
    */
-  async findOne(id: number): Promise<Loaded<Order, PopulatedOrderFields>> {
-  const populateFields: PopulatedOrderFields[] = [
-    'product',
-    'funcionarioResposavel',
-    'etapas',
-    'trackings',
-    'maquina'
-  ];
-  
-  const order = await this.orderRepository.findOne(id, {
-    populate: populateFields
-  });
-  
-  if (!order) {
-    throw new NotFoundException(`Pedido com ID ${id} não encontrado.`);
+  async findOne(id: number): Promise<Order> {
+    const order = await db.selectFrom('order').selectAll().where('id', '=', id).executeTakeFirst();
+    if (!order) {
+      throw new NotFoundException(`Pedido com ID ${id} não encontrado.`);
+    }
+    return order;
   }
-  
-  return order;
-}
 
   /**
    * Cria uma nova ordem de produção
@@ -93,10 +57,8 @@ export class OrdersService {
     }
 
     // Busca as entidades relacionadas
-    const [product, funcionario] = await Promise.all([
-      this.productRepository.findOne({ code: createOrderDto.productCode }),
-      this.funcionariosRepository.findOne({ code: createOrderDto.employeeCode }),
-    ]);
+    const product = await db.selectFrom('product').selectAll().where('code', '=', createOrderDto.productCode).executeTakeFirst();
+    const funcionario = await db.selectFrom('funcionario').selectAll().where('code', '=', createOrderDto.employeeCode).executeTakeFirst();
 
     if (!product) {
       throw new NotFoundException(`Produto com código ${createOrderDto.productCode} não encontrado.`);
@@ -107,35 +69,36 @@ export class OrdersService {
     }
 
     // Busca máquina se fornecida
-    let maquina: Maquina | null = null;
+    let maquinaId: number | undefined = undefined;
     if (createOrderDto.maquinaCodigo) {
-      maquina = await this.maquinaRepository.findOne({ 
-        codigo: createOrderDto.maquinaCodigo 
-      });
+      const maquina = await db.selectFrom('maquina').selectAll().where('codigo', '=', createOrderDto.maquinaCodigo).executeTakeFirst();
       
       if (!maquina) {
         throw new NotFoundException(
           `Máquina com código ${createOrderDto.maquinaCodigo} não encontrada.`
         );
       }
+      maquinaId = maquina.id;
     }
 
     // Cria a ordem
-    const order = this.orderRepository.create({
-      orderNumber: `OP-${Date.now()}`,
-      name: `Pedido ${Date.now()}`,
-      product,
-      funcionarioResposavel: funcionario,
-      maquina,
-      lotQuantity: createOrderDto.lotQuantity,
-      finalDestination: createOrderDto.finalDestination,
-      status: 'aberto',
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
+    const newOrder = await db.insertInto('order')
+      .values({
+        orderNumber: `OP-${Date.now()}`,
+        name: `Pedido ${Date.now()}`,
+        productId: product.id,
+        funcionarioResposavelId: funcionario.id,
+        maquinaId: maquinaId,
+        lotQuantity: createOrderDto.lotQuantity,
+        finalDestination: createOrderDto.finalDestination,
+        status: 'aberto',
+        created_at: new Date(),
+        updated_at: new Date(),
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
 
-    await this.em.persistAndFlush(order);
-    return order;
+    return newOrder;
   }
 
   /**
@@ -143,10 +106,8 @@ export class OrdersService {
    * @throws NotFoundException se ordem ou funcionário não forem encontrados
    */
   async startTracking(trackOrderDto: TrackOrderDto): Promise<OrderTracking> {
-    const [order, funcionario] = await Promise.all([
-      this.orderRepository.findOne(trackOrderDto.orderId),
-      this.funcionariosRepository.findOne({ code: trackOrderDto.employeeCode }),
-    ]);
+    const order = await db.selectFrom('order').selectAll().where('id', '=', trackOrderDto.orderId).executeTakeFirst();
+    const funcionario = await db.selectFrom('funcionario').selectAll().where('code', '=', trackOrderDto.employeeCode).executeTakeFirst();
 
     if (!order) {
       throw new NotFoundException(`Ordem com ID ${trackOrderDto.orderId} não encontrada.`);
@@ -158,14 +119,16 @@ export class OrdersService {
       );
     }
 
-    const tracking = this.orderTrackingRepository.create({
-      order,
-      funcionarios: funcionario,
-      startTime: new Date(),
-    });
+    const newTracking = await db.insertInto('order_tracking')
+      .values({
+        orderId: order.id,
+        funcionarioId: funcionario.id,
+        startTime: new Date(),
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
 
-    await this.em.persistAndFlush(tracking);
-    return tracking;
+    return newTracking;
   }
 
   /**
@@ -184,18 +147,23 @@ export class OrdersService {
       throw new BadRequestException('Quantidade perdida não pode ser negativa.');
     }
 
-    const tracking = await this.orderTrackingRepository.findOne(trackingId);
+    const tracking = await db.selectFrom('order_tracking').selectAll().where('id', '=', trackingId).executeTakeFirst();
     
     if (!tracking) {
       throw new NotFoundException(`Rastreamento com ID ${trackingId} não encontrado.`);
     }
 
-    tracking.endTime = new Date();
-    tracking.lostQuantity = trackOrderDto.lostQuantity;
-    tracking.processedQuantity = trackOrderDto.processedQuantity;
+    const updatedTracking = await db.updateTable('order_tracking')
+      .set({
+        endTime: new Date(),
+        lostQuantity: trackOrderDto.lostQuantity,
+        processedQuantity: trackOrderDto.processedQuantity,
+      })
+      .where('id', '=', trackingId)
+      .returningAll()
+      .executeTakeFirstOrThrow();
 
-    await this.em.flush();
-    return tracking;
+    return updatedTracking;
   }
 
   /**
@@ -204,8 +172,7 @@ export class OrdersService {
   async getOrderReport(orderId: number) {
     const order = await this.findOne(orderId);
     
-    // Cálculo de métricas
-    const trackings = order.trackings.getItems();
+    const trackings = await db.selectFrom('order_tracking').selectAll().where('orderId', '=', orderId).execute();
     const totalProcessed = trackings.reduce(
       (sum, tracking) => sum + (tracking.processedQuantity || 0), 0
     );
@@ -217,29 +184,35 @@ export class OrdersService {
       ? ((totalProcessed - totalLost) / totalProcessed) * 100 
       : 0;
 
+    const product = await db.selectFrom('product').selectAll().where('id', '=', order.productId).executeTakeFirst();
+    const maquina = order.maquinaId ? await db.selectFrom('maquina').selectAll().where('id', '=', order.maquinaId).executeTakeFirst() : undefined;
+
     return {
       orderNumber: order.orderNumber,
-      product: order.product.name,
+      product: product?.name,
       lotQuantity: order.lotQuantity,
       finalDestination: order.finalDestination,
       status: order.status,
-      maquina: order.maquina ? {
-        codigo: order.maquina.codigo,
-        nome: order.maquina.nome,
-        tipo: order.maquina.tipo
+      maquina: maquina ? {
+        codigo: maquina.codigo,
+        nome: maquina.nome,
+        tipo: maquina.tipo
       } : null,
       efficiency: efficiency.toFixed(2) + '%',
       totalProcessed,
       totalLost,
-      trackings: trackings.map((tracking) => ({
-        funcionario: tracking.funcionarios.nome,
-        startTime: tracking.startTime,
-        endTime: tracking.endTime,
-        duration: tracking.endTime 
-          ? this.calculateDuration(tracking.startTime, tracking.endTime)
-          : null,
-        processedQuantity: tracking.processedQuantity,
-        lostQuantity: tracking.lostQuantity,
+      trackings: await Promise.all(trackings.map(async (tracking) => {
+        const funcionario = await db.selectFrom('funcionario').selectAll().where('id', '=', tracking.funcionarioId).executeTakeFirst();
+        return {
+          funcionario: funcionario?.nome,
+          startTime: tracking.startTime,
+          endTime: tracking.endTime,
+          duration: tracking.endTime 
+            ? this.calculateDuration(tracking.startTime, tracking.endTime)
+            : null,
+          processedQuantity: tracking.processedQuantity,
+          lostQuantity: tracking.lostQuantity,
+        };
       })),
     };
   }
@@ -248,15 +221,13 @@ export class OrdersService {
    * Cria uma nova etapa para uma ordem
    * @throws NotFoundException se ordem ou funcionário não forem encontrados
    */
- async createEtapa(
+  async createEtapa(
     orderId: number,
     nome: string,
     funcionarioCode: string
   ): Promise<Etapa> {
-    const [order, funcionario] = await Promise.all([
-      this.orderRepository.findOne(orderId),
-      this.funcionariosRepository.findOne({ code: funcionarioCode }),
-    ]);
+    const order = await db.selectFrom('order').selectAll().where('id', '=', orderId).executeTakeFirst();
+    const funcionario = await db.selectFrom('funcionario').selectAll().where('code', '=', funcionarioCode).executeTakeFirst();
 
     if (!order) {
       throw new NotFoundException(`Ordem com ID ${orderId} não encontrada.`);
@@ -266,25 +237,26 @@ export class OrdersService {
       throw new NotFoundException(`Funcionário com código ${funcionarioCode} não encontrado.`);
     }
 
-    const etapa = this.etapaRepository.create({
-      nome,
-      order,
-      funcionario,
-     inicio: null,
-     fim: null,
-    });
+    const newEtapa = await db.insertInto('etapa')
+      .values({
+        nome,
+        orderId: order.id,
+        funcionarioId: funcionario.id,
+        inicio: undefined,
+        fim: undefined,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
 
-    await this.em.persistAndFlush(etapa);
-    return etapa;
+    return newEtapa;
   }
-
 
   /**
    * Inicia uma etapa de produção
    * @throws NotFoundException se a etapa não for encontrada
    */
   async startEtapa(etapaId: number): Promise<Etapa> {
-    const etapa = await this.etapaRepository.findOne(etapaId);
+    const etapa = await db.selectFrom('etapa').selectAll().where('id', '=', etapaId).executeTakeFirst();
     
     if (!etapa) {
       throw new NotFoundException(`Etapa com ID ${etapaId} não encontrada.`);
@@ -294,11 +266,13 @@ export class OrdersService {
       throw new BadRequestException('Esta etapa já foi iniciada.');
     }
 
-    etapa.inicio = new Date();
-   
+    const updatedEtapa = await db.updateTable('etapa')
+      .set({ inicio: new Date() })
+      .where('id', '=', etapaId)
+      .returningAll()
+      .executeTakeFirstOrThrow();
     
-    await this.em.flush();
-    return etapa;
+    return updatedEtapa;
   }
 
   /**
@@ -306,7 +280,7 @@ export class OrdersService {
    * @throws NotFoundException se a etapa não for encontrada
    */
   async endEtapa(etapaId: number): Promise<Etapa> {
-    const etapa = await this.etapaRepository.findOne(etapaId);
+    const etapa = await db.selectFrom('etapa').selectAll().where('id', '=', etapaId).executeTakeFirst();
     
     if (!etapa) {
       throw new NotFoundException(`Etapa com ID ${etapaId} não encontrada.`);
@@ -320,12 +294,13 @@ export class OrdersService {
       throw new BadRequestException('Esta etapa já foi finalizada.');
     }
 
-    etapa.fim = new Date();
+    const updatedEtapa = await db.updateTable('etapa')
+      .set({ fim: new Date() })
+      .where('id', '=', etapaId)
+      .returningAll()
+      .executeTakeFirstOrThrow();
    
-    
-    
-    await this.em.flush();
-    return etapa;
+    return updatedEtapa;
   }
 
   /**
@@ -333,13 +308,13 @@ export class OrdersService {
    * @throws NotFoundException se a ordem não for encontrada
    */
   async listEtapasByOrder(orderId: number): Promise<Etapa[]> {
-    const order = await this.orderRepository.findOne(orderId, { populate: ['etapas'] });
+    const order = await db.selectFrom('order').selectAll().where('id', '=', orderId).executeTakeFirst();
     
     if (!order) {
       throw new NotFoundException(`Ordem com ID ${orderId} não encontrada.`);
     }
 
-    return order.etapas.getItems();
+    return db.selectFrom('etapa').selectAll().where('orderId', '=', orderId).execute();
   }
 
   /**
@@ -348,55 +323,59 @@ export class OrdersService {
    * @throws BadRequestException para transições de status inválidas
    */
   async atualizarStatusPedido(
-  pedidoId: number, 
-  status: string,
-  motivoId?: number
-): Promise<Order> {
-  // First validate the input status
-  const statusValidado = this.validarStatus(status);
+    pedidoId: number, 
+    status: string,
+    motivoId?: number
+  ): Promise<Order> {
+    const statusValidado = this.validarStatus(status);
 
-  // Then load the order with necessary relations
-  const pedido = await this.orderRepository.findOne(pedidoId, { 
-    populate: ['funcionarioResposavel', 'etapas', 'trackings'] 
-  });
-  
-  if (!pedido) {
-    throw new NotFoundException(`Pedido com ID ${pedidoId} não encontrado.`);
-  }
-
-  // TypeScript now knows both status values are OrderStatus
-  this.validateStatusTransition(
-    pedido.status as OrderStatus,
-    statusValidado,
-    motivoId,
-    pedido.etapas.getItems()
-  );
-
-  if (statusValidado === 'interrompido') {
-    if (motivoId === undefined) {
-      throw new BadRequestException('Motivo de interrupção é obrigatório.');
+    const pedido = await db.selectFrom('order').selectAll().where('id', '=', pedidoId).executeTakeFirst();
+    
+    if (!pedido) {
+      throw new NotFoundException(`Pedido com ID ${pedidoId} não encontrado.`);
     }
 
-    const motivo = await this.motivoRepository.findOne({ id: motivoId });
-    if (!motivo) {
-      throw new NotFoundException(`Motivo com ID ${motivoId} não encontrado.`);
-    }
+    const etapas = await db.selectFrom('etapa').selectAll().where('orderId', '=', pedidoId).execute();
 
-    await this.registrarHistorico(
-      pedido,
-      pedido.funcionarioResposavel,
-      'Pedido interrompido',
-      `Motivo: ${motivo.descricao}`,
-      motivo
+    this.validateStatusTransition(
+      pedido.status as OrderStatus,
+      statusValidado,
+      motivoId,
+      etapas
     );
+
+    if (statusValidado === 'interrompido') {
+      if (motivoId === undefined) {
+        throw new BadRequestException('Motivo de interrupção é obrigatório.');
+      }
+
+      const motivo = await db.selectFrom('motivo_interrupcao').selectAll().where('id', '=', motivoId).executeTakeFirst();
+      if (!motivo) {
+        throw new NotFoundException(`Motivo com ID ${motivoId} não encontrado.`);
+      }
+
+      const funcionarioResposavel = await db.selectFrom('funcionario').selectAll().where('id', '=', pedido.funcionarioResposavelId).executeTakeFirstOrThrow();
+
+      await this.registrarHistorico(
+        pedido,
+        funcionarioResposavel,
+        'Pedido interrompido',
+        `Motivo: ${motivo.descricao}`,
+        motivo
+      );
+    }
+
+    const updatedPedido = await db.updateTable('order')
+      .set({
+        status: statusValidado,
+        updated_at: new Date(),
+      })
+      .where('id', '=', pedidoId)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+
+    return updatedPedido;
   }
-
-  pedido.status = statusValidado;
-  pedido.updated_at = new Date();
-
-  await this.em.flush();
-  return pedido;
-}
 
   /**
    * Valida a transição de status
@@ -407,17 +386,14 @@ export class OrdersService {
     motivoId: number | undefined,
     etapas: Etapa[]
   ): void {
-    // Pedidos finalizados não podem ser alterados
     if (currentStatus === 'finalizado') {
       throw new BadRequestException('Pedido finalizado não pode ter seu status alterado.');
     }
 
-    // Validação para status 'interrompido'
     if (newStatus === 'interrompido' && motivoId === undefined) {
       throw new BadRequestException('Motivo de interrupção é obrigatório.');
     }
 
-    // Validação para transição para 'em_andamento'
     if (newStatus === 'em_andamento' && currentStatus === 'aberto') {
       const etapasObrigatorias = ['Preparação', 'Produção'];
       const etapasCriadas = etapas.map(e => e.nome);
@@ -441,38 +417,39 @@ export class OrdersService {
     detalhes: string,
     motivo?: MotivoInterrupcao
   ): Promise<HistoricoProducao> {
-    const historico = this.historicoProducaoRepository.create({
-      pedido,
-      funcionario,
-      acao,
-      detalhes,
-      motivo_interrupcao: motivo,
-      data_hora: new Date(),
-    });
+    const newHistorico = await db.insertInto('historico_producao')
+      .values({
+        orderId: pedido.id,
+        funcionarioId: funcionario.id,
+        acao,
+        detalhes,
+        motivoInterrupcaoId: motivo?.id,
+        data_hora: new Date(),
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
 
-    await this.em.persistAndFlush(historico);
-    return historico;
+    return newHistorico;
   }
 
   /**
    * Lista todos os motivos de interrupção
    */
-  async listMotivosInterrupcao(): Promise<Loaded<MotivoInterrupcao>[]> {
-      const connection = this.em.getConnection();
-  const result = await connection.execute('SELECT * FROM motivo_interrupcao');
-  
-  // Converter os resultados brutos para instâncias da entidade
-  return result.map(item => this.em.map(MotivoInterrupcao, item));
+  async listMotivosInterrupcao(): Promise<MotivoInterrupcao[]> {
+    return db.selectFrom('motivo_interrupcao').selectAll().execute();
   }
+
   /**
    * Cria um novo motivo de interrupção
    */
   async createMotivoInterrupcao(
     createMotivoInterrupcaoDto: CreateMotivoInterrupcaoDto
   ): Promise<MotivoInterrupcao> {
-    const motivo = this.motivoRepository.create(createMotivoInterrupcaoDto);
-    await this.em.persistAndFlush(motivo);
-    return motivo;
+    const newMotivo = await db.insertInto('motivo_interrupcao')
+      .values(createMotivoInterrupcaoDto)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return newMotivo;
   }
 
   /**
@@ -481,10 +458,8 @@ export class OrdersService {
   async createHistoricoProducao(
     createHistoricoProducaoDto: CreateHistoricoProducaoDto
   ): Promise<HistoricoProducao> {
-    const [pedido, funcionario] = await Promise.all([
-      this.orderRepository.findOne(createHistoricoProducaoDto.pedidoId),
-      this.funcionariosRepository.findOne(createHistoricoProducaoDto.funcionarioId),
-    ]);
+    const pedido = await db.selectFrom('order').selectAll().where('id', '=', createHistoricoProducaoDto.pedidoId).executeTakeFirst();
+    const funcionario = await db.selectFrom('funcionario').selectAll().where('id', '=', createHistoricoProducaoDto.funcionarioId).executeTakeFirst();
 
     if (!pedido) {
       throw new NotFoundException(
@@ -498,178 +473,130 @@ export class OrdersService {
       );
     }
 
-    // Busca motivo se fornecido
-    let motivo: MotivoInterrupcao | undefined = undefined;
-    if (createHistoricoProducaoDto.motivoInterrupcaoId !== undefined) {
-      const motivoEncontrado = await this.motivoRepository.findOne({ 
-        id: createHistoricoProducaoDto.motivoInterrupcaoId 
-      });
-      
-      if (!motivoEncontrado) {
-        throw new NotFoundException(
-          `Motivo com ID ${createHistoricoProducaoDto.motivoInterrupcaoId} não encontrado.`
-        );
-      }
-      motivo = motivoEncontrado;
+    const newHistorico = await db.insertInto('historico_producao')
+      .values({
+        orderId: pedido.id,
+        funcionarioId: funcionario.id,
+        acao: createHistoricoProducaoDto.acao,
+        detalhes: createHistoricoProducaoDto.detalhes,
+        motivoInterrupcaoId: createHistoricoProducaoDto.motivoInterrupcaoId,
+        data_hora: new Date(),
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+
+    return newHistorico;
+  }
+
+  /**
+   * Atualiza um motivo de interrupção existente
+   */
+  async updateMotivoInterrupcao(
+    id: number,
+    updateMotivoInterrupcaoDto: UpdateMotivoInterrupcaoDto
+  ): Promise<MotivoInterrupcao> {
+    const motivo = await db.selectFrom('motivo_interrupcao').selectAll().where('id', '=', id).executeTakeFirst();
+    if (!motivo) {
+      throw new NotFoundException(`Motivo de interrupção com ID ${id} não encontrado.`);
     }
 
-    const historico = this.historicoProducaoRepository.create({
-      pedido,
-      funcionario,
-      acao: createHistoricoProducaoDto.acao,
-      detalhes: createHistoricoProducaoDto.detalhes,
-      motivo_interrupcao: motivo,
-      data_hora: new Date(),
-    });
+    const updatedMotivo = await db.updateTable('motivo_interrupcao')
+      .set(updateMotivoInterrupcaoDto)
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return updatedMotivo;
+  }
 
-    await this.em.persistAndFlush(historico);
+  /**
+   * Remove um motivo de interrupção
+   */
+  async removeMotivoInterrupcao(id: number): Promise<void> {
+    const { numDeletedRows } = await db.deleteFrom('motivo_interrupcao').where('id', '=', id).executeTakeFirstOrThrow();
+    if (Number(numDeletedRows) === 0) {
+      throw new NotFoundException(`Motivo de interrupção com ID ${id} não encontrado.`);
+    }
+  }
+
+  /**
+   * Busca um motivo de interrupção pelo ID
+   */
+  async findMotivoInterrupcaoById(id: number): Promise<MotivoInterrupcao> {
+    const motivo = await db.selectFrom('motivo_interrupcao').selectAll().where('id', '=', id).executeTakeFirst();
+    if (!motivo) {
+      throw new NotFoundException(`Motivo de interrupção com ID ${id} não encontrado.`);
+    }
+    return motivo;
+  }
+
+  /**
+   * Busca um histórico de produção pelo ID
+   */
+  async findHistoricoProducaoById(id: number): Promise<HistoricoProducao> {
+    const historico = await db.selectFrom('historico_producao').selectAll().where('id', '=', id).executeTakeFirst();
+    if (!historico) {
+      throw new NotFoundException(`Histórico de produção com ID ${id} não encontrado.`);
+    }
     return historico;
   }
 
   /**
-   * Atualiza um registro no histórico de produção
+   * Atualiza um histórico de produção existente
    */
   async updateHistoricoProducao(
     id: number,
-    updateHistoricoProducaoDto: UpdateHistoricoProducaoDto,
+    updateHistoricoProducaoDto: UpdateHistoricoProducaoDto
   ): Promise<HistoricoProducao> {
-    const historico = await this.historicoProducaoRepository.findOne(id);
+    const historico = await db.selectFrom('historico_producao').selectAll().where('id', '=', id).executeTakeFirst();
     if (!historico) {
-      throw new NotFoundException(`Histórico com ID ${id} não encontrado.`);
+      throw new NotFoundException(`Histórico de produção com ID ${id} não encontrado.`);
     }
 
-    // Atualizações condicionais
-    if (updateHistoricoProducaoDto.pedidoId !== undefined) {
-      const pedido = await this.orderRepository.findOne(updateHistoricoProducaoDto.pedidoId);
-      if (!pedido) {
-        throw new NotFoundException(
-          `Pedido com ID ${updateHistoricoProducaoDto.pedidoId} não encontrado.`
-        );
-      }
-      historico.pedido = pedido;
-    }
-
-    if (updateHistoricoProducaoDto.funcionarioId !== undefined) {
-      const funcionario = await this.funcionariosRepository.findOne(
-        updateHistoricoProducaoDto.funcionarioId
-      );
-      if (!funcionario) {
-        throw new NotFoundException(
-          `Funcionário com ID ${updateHistoricoProducaoDto.funcionarioId} não encontrado.`
-        );
-      }
-      historico.funcionario = funcionario;
-    }
-
-    if (updateHistoricoProducaoDto.acao !== undefined) {
-      historico.acao = updateHistoricoProducaoDto.acao;
-    }
-
-    if (updateHistoricoProducaoDto.detalhes !== undefined) {
-      historico.detalhes = updateHistoricoProducaoDto.detalhes;
-    }
-
-    // Atualização especial para motivo
-    if (updateHistoricoProducaoDto.motivoInterrupcaoId !== undefined) {
-      if (updateHistoricoProducaoDto.motivoInterrupcaoId === null) {
-        historico.motivo_interrupcao = undefined;
-      } else {
-        const motivo = await this.motivoRepository.findOne(
-          updateHistoricoProducaoDto.motivoInterrupcaoId
-        );
-        if (!motivo) {
-          throw new NotFoundException(
-            `Motivo com ID ${updateHistoricoProducaoDto.motivoInterrupcaoId} não encontrado.`
-          );
-        }
-        historico.motivo_interrupcao = motivo;
-      }
-    }
-
-    if (updateHistoricoProducaoDto.dataHora !== undefined) {
-      historico.data_hora = updateHistoricoProducaoDto.dataHora;
-    }
-
-    await this.em.flush();
-    return historico;
+    const updatedHistorico = await db.updateTable('historico_producao')
+      .set(updateHistoricoProducaoDto)
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return updatedHistorico;
   }
 
   /**
-   * Lista o histórico de produção de uma ordem
+   * Remove um histórico de produção
    */
-  async listHistoricoProducao(orderId: number): Promise<HistoricoProducao[]> {
-    const historico = await this.historicoProducaoRepository.find(
-      { pedido: orderId },
-      { populate: ['funcionario', 'motivo_interrupcao'] }
-    );
-    
-    if (!historico || historico.length === 0) {
-      throw new NotFoundException(
-        `Nenhum histórico encontrado para a ordem com ID ${orderId}.`
-      );
+  async removeHistoricoProducao(id: number): Promise<void> {
+    const { numDeletedRows } = await db.deleteFrom('historico_producao').where('id', '=', id).executeTakeFirstOrThrow();
+    if (Number(numDeletedRows) === 0) {
+      throw new NotFoundException(`Histórico de produção com ID ${id} não encontrado.`);
     }
-    
-    return historico;
   }
 
   /**
-   * Lista rastreamentos de uma ordem
+   * Lista todos os rastreamentos de uma ordem
    */
   async listRastreamentosByOrder(orderId: number): Promise<OrderTracking[]> {
-    const rastreamentos = await this.orderTrackingRepository.find(
-      { order: orderId },
-      { populate: ['funcionarios'] }
-    );
-    
-    if (!rastreamentos || rastreamentos.length === 0) {
-      throw new NotFoundException(
-        `Nenhum rastreamento encontrado para a ordem com ID ${orderId}.`
-      );
-    }
-    
-    return rastreamentos;
-  }
-
-  /**
-   * Atualiza a máquina associada a uma ordem
-   */
-  async atualizarMaquina(orderId: number, maquinaCodigo: string): Promise<Order> {
-    const order = await this.orderRepository.findOne(orderId);
+    const order = await db.selectFrom('order').selectAll().where('id', '=', orderId).executeTakeFirst();
     if (!order) {
       throw new NotFoundException(`Ordem com ID ${orderId} não encontrada.`);
     }
-
-    if (maquinaCodigo) {
-      const maquina = await this.maquinaRepository.findOne({ codigo: maquinaCodigo });
-      if (!maquina) {
-        throw new NotFoundException(`Máquina com código ${maquinaCodigo} não encontrada.`);
-      }
-      order.maquina = maquina;
-    } else {
-      order.maquina = undefined;
-    }
-
-    order.updated_at = new Date();
-    await this.em.flush();
-    return order;
+    return db.selectFrom('order_tracking').selectAll().where('orderId', '=', orderId).execute();
   }
 
   /**
-   * Métodos auxiliares
+   * Valida o status fornecido
    */
-  private calculateDuration(start: Date, end: Date): string {
-    const diff = end.getTime() - start.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return `${hours}h ${minutes}m`;
-  }
-
   private validarStatus(status: string): OrderStatus {
     if (!VALID_STATUSES.includes(status as OrderStatus)) {
-      throw new BadRequestException(
-        `Status inválido. Os status permitidos são: ${VALID_STATUSES.join(', ')}`
-      );
+      throw new BadRequestException(`Status inválido: ${status}. Status permitidos: ${VALID_STATUSES.join(', ')}`);
     }
     return status as OrderStatus;
   }
+
+  /**
+   * Calcula a duração entre duas datas em minutos
+   */
+  private calculateDuration(start: Date, end: Date): number {
+    return Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+  }
 }
+
+

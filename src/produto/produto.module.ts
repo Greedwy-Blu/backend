@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ProdutoService } from './produto.service';
 import { ProductsController } from './produto.controller';
-import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { Product } from './entities/produto.entity';
 import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [MikroOrmModule.forFeature([Product]), AuthModule,],
+  imports: [AuthModule],
   controllers: [ProductsController],
   providers: [ProdutoService],
 })
 export class ProductsModule {}
+
+

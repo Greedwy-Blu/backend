@@ -1,37 +1,35 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository, EntityManager,RequiredEntityData } from '@mikro-orm/core'; // Adicione EntityManager
-import { Product } from './entities/produto.entity'; // Verifique o caminho
+import { Product } from './entities/produto.entity';
+import { db } from '../config/database.config';
 
 @Injectable()
 export class ProdutoService {
-  constructor(
-    @InjectRepository(Product)
-    private readonly productRepository: EntityRepository<Product>,
-    private readonly em: EntityManager, // Injete o EntityManager
-  ) {}
+  constructor() {}
 
   async create(productData: Partial<Product>): Promise<Product> {
     if (!productData.code || !productData.name || productData.price === undefined || productData.quantity === undefined) {
       throw new Error('Missing required fields');
     }
   
-    const product = this.productRepository.create(productData as RequiredEntityData<Product>);
-    await this.em.persistAndFlush(product);
-    return product;
+    const newProduct = await db.insertInto('product')
+      .values({
+        code: productData.code,
+        name: productData.name,
+        description: productData.description,
+        price: productData.price,
+        quantity: productData.quantity,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return newProduct;
   }
 
   async findAll(): Promise<Product[]> {
-    const connection = this.em.getConnection();
-     const result = await connection.execute('SELECT * FROM product');
-     
-     // Converter os resultados brutos para instâncias da entidade
-     return result.map(item => this.em.map(Product, item));
+    return db.selectFrom('product').selectAll().execute();
   }
 
-  // Retorna um produto pelo ID
   async findOne(id: number): Promise<Product> {
-    const product = await this.productRepository.findOne(id);
+    const product = await db.selectFrom('product').selectAll().where('id', '=', id).executeTakeFirst();
     if (!product) {
       throw new NotFoundException('Product not found');
     }
@@ -39,22 +37,25 @@ export class ProdutoService {
   }
 
   async update(id: number, updateData: Partial<Product>): Promise<Product> {
-    const product = await this.productRepository.findOne(id);
+    const product = await db.selectFrom('product').selectAll().where('id', '=', id).executeTakeFirst();
     if (!product) {
       throw new NotFoundException('Product not found');
     }
 
-    this.productRepository.assign(product, updateData); // Atualize os dados
-    await this.em.flush(); // Use o EntityManager
-    return product;
+    const updatedProduct = await db.updateTable('product')
+      .set(updateData)
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return updatedProduct;
   }
 
   async remove(id: number): Promise<void> {
-    const product = await this.productRepository.findOne(id);
-    if (!product) {
+    const { numDeletedRows } = await db.deleteFrom('product').where('id', '=', id).executeTakeFirstOrThrow();
+    if (Number(numDeletedRows) === 0) {
       throw new NotFoundException('Product not found');
     }
-
-    await this.em.removeAndFlush(product); // Use o EntityManager
   }
 }
+
+

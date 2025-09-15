@@ -1,73 +1,61 @@
-// src/auth/auth.service.ts
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/core';
-import { Funcionario } from '../colaborador/entities/funcionario.entity';
-import { Gestao } from '../gestor/entities/gestor.entity';
 import { Auth } from './entities/auth.entity';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login.dto';
-import { EntityManager } from '@mikro-orm/postgresql';
+import { db } from '../config/database.config';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(Auth)
-    private readonly authRepository: EntityRepository<Auth>,
-    @InjectRepository(Funcionario)
-    private readonly funcionarioRepository: EntityRepository<Funcionario>,
-    @InjectRepository(Gestao)
-    private readonly gestaoRepository: EntityRepository<Gestao>,
     private readonly jwtService: JwtService,
-    private readonly em: EntityManager,
   ) {}
 
- async create(createAuthDto: CreateAuthDto) {
-  const { code, password } = createAuthDto;
-  
-  const existingAuth = await this.authRepository.findOne({ code });
-  if (existingAuth) {
-    throw new UnauthorizedException('Código já está em uso');
+  async create(createAuthDto: CreateAuthDto) {
+    const { code, password } = createAuthDto;
+
+    const existingAuth = await db.selectFrom('auth').selectAll().where('code', '=', code).executeTakeFirst();
+    if (existingAuth) {
+      throw new UnauthorizedException('Código já está em uso');
+    }
+
+    const funcionario = await db.selectFrom('funcionario').selectAll().where('code', '=', code).executeTakeFirst();
+    const gestor = await db.selectFrom('gestao').selectAll().where('code', '=', code).executeTakeFirst();
+
+    if (!funcionario && !gestor) {
+      throw new NotFoundException('Código não encontrado');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    let authData: Omit<Auth, 'id'> = {
+      code: code,
+      password: hashedPassword,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      role: '', // Temporarily assign an empty string, will be updated below
+    };
+
+    if (funcionario) {
+      authData.role = 'funcionario';
+      authData.funcionarioId = funcionario.id;
+    } else if (gestor) {
+      authData.role = 'gestao';
+      authData.gestaoId = gestor.id;
+    }
+
+    const newAuth = await db.insertInto('auth').values(authData).returningAll().executeTakeFirstOrThrow();
+    return newAuth;
   }
 
-  // Busca com tratamento direto do tipo
-  const funcionario = await this.funcionarioRepository.findOne({ code });
-  const gestor = await this.gestaoRepository.findOne({ code });
-
-  if (!funcionario && !gestor) {
-    throw new NotFoundException('Código não encontrado');
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const auth = new Auth();
-  auth.code = code;
-  auth.password = hashedPassword;
-
-  if (funcionario) {
-    auth.role = 'funcionario';
-    auth.funcionario = funcionario;
-  } else if (gestor) {
-    auth.role = 'gestao';
-    auth.gestao = gestor;
-  }
-
-  await this.em.persistAndFlush(auth);
-  return auth;
-}
   async validateUser(code: string, password: string): Promise<Auth> {
-      
-    const auth = await this.authRepository.findOne(
-      { code },
-      { populate: ['funcionario', 'gestao'] }, // Carrega o relacionamento
-    );
+    const auth = await db.selectFrom('auth').selectAll().where('code', '=', code).executeTakeFirst();
 
     if (!auth) {
       throw new UnauthorizedException('Código ou senha inválidos');
     }
 
-    // Verifica a senha
     const isPasswordValid = await bcrypt.compare(password, auth.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Código ou senha inválidos');
@@ -83,65 +71,63 @@ export class AuthService {
       role: auth.role,
     };
 
-    // Gera o token de acesso
     const accessToken = this.jwtService.sign(payload);
 
-    // Define a data de expiração do token (1 hora a partir de agora)
     const tokenExpiresAt = new Date();
     tokenExpiresAt.setHours(tokenExpiresAt.getHours() + 1);
 
-    // Atualiza o Auth com o token e a data de expiração
-    auth.accessToken = accessToken;
-    auth.tokenExpiresAt = tokenExpiresAt;
-    await this.em.flush();
+    await db.updateTable('auth')
+      .set({
+        accessToken: accessToken,
+        tokenExpiresAt: tokenExpiresAt,
+        updatedAt: new Date(),
+      })
+      .where('id', '=', auth.id)
+      .execute();
+
+    const gestao = auth.gestaoId ? await db.selectFrom('gestao').selectAll().where('id', '=', auth.gestaoId).executeTakeFirst() : undefined;
+    const funcionario = auth.funcionarioId ? await db.selectFrom('funcionario').selectAll().where('id', '=', auth.funcionarioId).executeTakeFirst() : undefined;
 
     return {
       access_token: accessToken,
       expires_at: tokenExpiresAt,
       role: auth.role,
-      sub:auth.id,
+      sub: auth.id,
       code: auth.code,
-      userAuth: auth.gestao?.auth?.id || auth.funcionario?.auth?.id,
-      user: auth.gestao || auth.funcionario,
-
+      userAuth: gestao?.id || funcionario?.id,
+      user: gestao || funcionario,
     };
   }
 
   async validateToken(user: any): Promise<boolean> {
     try {
-      // Verifica se o user.id está definido
       if (!user?.id) {
         throw new Error('ID do usuário não encontrado no token.');
       }
-  
-      // Busca o Auth no banco de dados
-      const auth = await this.authRepository.findOne(
-        { id: user.id }, // Usa o user.id como ID
-        { populate: ['funcionario', 'gestao'] }, // Remova se não precisar desses dados
-      );
-  
-      // Verifica se o registro foi encontrado
+
+      const auth = await db.selectFrom('auth').selectAll().where('id', '=', user.id).executeTakeFirst();
+
       if (!auth) {
         console.warn('Registro de autenticação não encontrado para o usuário:', user.id);
         return false;
       }
-  
-      // Verifica se o accessToken e tokenExpiresAt estão definidos
+
       if (!auth.accessToken || !auth.tokenExpiresAt) {
         console.warn('Token inválido: accessToken ou tokenExpiresAt não definidos.');
         return false;
       }
-  
-      // Verifica se o token expirou
+
       if (auth.tokenExpiresAt < new Date()) {
         console.warn('Token expirado para o usuário:', user.id);
         return false;
       }
-  
-      return true; // Token válido
-    } catch (error) {
+
+      return true;
+    } catch (error: any) {
       console.error('Erro ao validar o token:', error.message);
       return false;
     }
   }
 }
+
+

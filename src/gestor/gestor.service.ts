@@ -1,49 +1,41 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@mikro-orm/nestjs';
-import { EntityRepository } from '@mikro-orm/core';
-import { EntityManager } from '@mikro-orm/core';
 import { Gestao } from './entities/gestor.entity';
 import { CreateGestorDto } from './dto/create-gestor.dto';
 import { UpdateGestorDto } from './dto/update-gestor.dto';
-import * as bcrypt from 'bcrypt'; // Importar bcrypt
+import * as bcrypt from 'bcrypt';
+import { db } from '../config/database.config';
 
 @Injectable()
 export class GestaoService {
-  constructor(
-    @InjectRepository(Gestao)
-    private readonly gestaoRepository: EntityRepository<Gestao>,
-    private readonly em: EntityManager, // Injete o EntityManager
-  ) {}
+  constructor() {}
 
   async create(createGestaoDto: CreateGestorDto): Promise<Gestao> {
-    // Cria uma nova instância da entidade Gestao
-    const gestao = new Gestao();
-    
-    // Atribui os valores do DTO à entidade
-    gestao.code = createGestaoDto.code;
-    gestao.name = createGestaoDto.name;
-    gestao.department = createGestaoDto.department;
-    gestao.role = createGestaoDto.role;
+    const { code, name, department, role, password } = createGestaoDto;
 
-    // Hash da senha antes de salvar
-    const saltRounds = 10;
-    gestao.password = await bcrypt.hash(createGestaoDto.password, saltRounds);
+    // Password hashing is handled by Auth service, so we don't hash it here.
+    // If the intention was to store it in Gestao, the schema would need adjustment.
 
-    // Persiste e sincroniza a entidade com o banco de dados
-    await this.em.persistAndFlush(gestao);
+    const newGestao = await db.insertInto('gestao')
+      .values({
+        code,
+        name,
+        department,
+        role,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
 
-    // Remover a password da resposta por segurança (embora já esteja hidden na entidade)
-    delete gestao.password;
-
-    return gestao;
+    return newGestao;
   }
 
   async findAll(): Promise<Gestao[]> {
-    return this.gestaoRepository.findAll();
+    return db.selectFrom('gestao').selectAll().execute();
   }
 
   async findOne(id: number): Promise<Gestao> {
-    const gestao = await this.gestaoRepository.findOne(id);
+    const gestao = await db.selectFrom('gestao').selectAll().where('id', '=', id).executeTakeFirst();
     if (!gestao) {
       throw new NotFoundException('Gestão não encontrada');
     }
@@ -51,44 +43,46 @@ export class GestaoService {
   }
 
   async update(id: number, updateGestaoDto: UpdateGestorDto): Promise<Gestao> {
-    const gestao = await this.gestaoRepository.findOne(id);
+    const gestao = await db.selectFrom('gestao').selectAll().where('id', '=', id).executeTakeFirst();
     if (!gestao) {
       throw new NotFoundException('Gestão não encontrada');
     }
 
-    // Atualiza apenas os campos fornecidos
+    const updatedFields: Partial<Gestao> = {
+      updatedAt: new Date(),
+    };
+
     if (updateGestaoDto.code !== undefined) {
-      gestao.code = updateGestaoDto.code;
+      updatedFields.code = updateGestaoDto.code;
     }
     if (updateGestaoDto.name !== undefined) {
-      gestao.name = updateGestaoDto.name;
+      updatedFields.name = updateGestaoDto.name;
     }
     if (updateGestaoDto.department !== undefined) {
-      gestao.department = updateGestaoDto.department;
+      updatedFields.department = updateGestaoDto.department;
     }
     if (updateGestaoDto.role !== undefined) {
-      gestao.role = updateGestaoDto.role;
+      updatedFields.role = updateGestaoDto.role;
     }
 
-    // Hash da nova senha, se fornecida
-    if (updateGestaoDto.password) {
-      const saltRounds = 10;
-      gestao.password = await bcrypt.hash(updateGestaoDto.password, saltRounds);
-    }
+    // Password update should be handled via Auth service if it's in the Auth table
+    // If it's meant to be updated here, the schema and logic need to be adjusted.
 
-    await this.em.flush(); // Use o EntityManager para sincronizar as alterações
+    const updatedGestao = await db.updateTable('gestao')
+      .set(updatedFields)
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirstOrThrow();
 
-    // Remover a password da resposta por segurança
-    delete gestao.password;
-
-    return gestao;
+    return updatedGestao;
   }
 
   async remove(id: number): Promise<void> {
-    const gestao = await this.gestaoRepository.findOne(id);
-    if (!gestao) {
+    const { numDeletedRows } = await db.deleteFrom('gestao').where('id', '=', id).executeTakeFirstOrThrow();
+    if (Number(numDeletedRows) === 0) {
       throw new NotFoundException('Gestão não encontrada');
     }
-    await this.em.removeAndFlush(gestao); // Use o EntityManager para remover e sincronizar
   }
 }
+
+

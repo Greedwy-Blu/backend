@@ -43,7 +43,7 @@ async function bootstrap() {
   // Configuração do Swagger
   const config = new DocumentBuilder()
     .setTitle('NestJS API')
-    .setDescription('API documentation for NestJS with Swagger, Orval, and MikroORM')
+    .setDescription("API documentation for NestJS with Swagger, Orval, and Kysely")
     .setVersion('1.0')
     .addBearerAuth(
       {
