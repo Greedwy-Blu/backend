@@ -27,11 +27,20 @@ export class FuncionarioService {
       .executeTakeFirstOrThrow();
 
    
-    return newFuncionario;
+    return {
+      ...newFuncionario,
+      password: hashedPassword,
+      updatedAtSS: new Date(), // or set to another appropriate value if needed
+    } as Funcionario;
   }
 
   async findAll(): Promise<Funcionario[]> {
-    return db.selectFrom('funcionario').selectAll().execute();
+    const funcionarios = await db.selectFrom('funcionario').selectAll().execute();
+    return funcionarios.map(f => ({
+      ...f,
+      password: '', // or fetch/set the actual password if needed
+      updatedAtSS: new Date(), // or set to the appropriate value
+    })) as Funcionario[];
   }
 
   async findOne(id: number): Promise<Funcionario> {
@@ -39,7 +48,11 @@ export class FuncionarioService {
     if (!funcionario) {
       throw new NotFoundException('Funcionário não encontrado');
     }
-    return funcionario;
+    return {
+      ...funcionario,
+      password: '', // or fetch/set the actual password if needed
+      updatedAtSS: new Date(), // or set to the appropriate value
+    } as Funcionario;
   }
 
   async update(id: number, updateFuncionarioDto: UpdateFuncionarioDto): Promise<Funcionario> {
@@ -49,7 +62,7 @@ export class FuncionarioService {
     }
 
     const updatedFields: Partial<Funcionario> = {
-      updatedAt: new Date(),
+      updatedAtSS: new Date(),
     };
 
     if (updateFuncionarioDto.code !== undefined) {
@@ -65,16 +78,18 @@ export class FuncionarioService {
       updatedFields.salario = updateFuncionarioDto.salario;
     }
 
-    // Password update should be handled via Auth service if it's in the Auth table
-    // If it's meant to be updated here, the schema and logic need to be adjusted.
-
+   
     const updatedFuncionario = await db.updateTable('funcionario')
       .set(updatedFields)
       .where('id', '=', id)
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    return updatedFuncionario;
+    return {
+      ...updatedFuncionario,
+      password: funcionario.code,
+      updatedAtSS: new Date(), 
+    } as Funcionario;
   }
 
   async remove(id: number): Promise<void> {

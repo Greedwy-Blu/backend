@@ -129,7 +129,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrderTracking"
+                  "type": "object"
                 }
               }
             }
@@ -280,7 +280,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Etapa"
+                  "type": "object"
                 }
               }
             }
@@ -321,7 +321,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Etapa"
+                  "type": "object"
                 }
               }
             }
@@ -1538,11 +1538,262 @@
           "maquinas"
         ]
       }
+    },
+    "/reports/order/{id}": {
+      "get": {
+        "operationId": "ReportsController_getOrderReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da ordem",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Relatório da ordem gerado com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gerar relatório de uma ordem específica",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/audit": {
+      "get": {
+        "operationId": "AuditController_getAuditLogs",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logs de auditoria retornados com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obter todos os logs de auditoria",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
+    "/notifications/send": {
+      "post": {
+        "operationId": "NotificationsController_sendNotification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "recipientId": {
+                    "type": "number",
+                    "example": 1,
+                    "description": "ID do destinatário (usuário ou funcionário)"
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Sua ordem de produção #123 foi iniciada.",
+                    "description": "Conteúdo da notificação"
+                  },
+                  "type": {
+                    "type": "string",
+                    "example": "info",
+                    "description": "Tipo da notificação (info, warning, error)"
+                  }
+                },
+                "required": [
+                  "recipientId",
+                  "message",
+                  "type"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Notificação enviada com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Enviar uma notificação",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/notifications/user/{userId}": {
+      "get": {
+        "operationId": "NotificationsController_getUserNotifications",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "ID do usuário",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notificações retornadas com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obter notificações de um usuário",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/notifications/mark-as-read/{notificationId}": {
+      "post": {
+        "operationId": "NotificationsController_markNotificationAsRead",
+        "parameters": [
+          {
+            "name": "notificationId",
+            "required": true,
+            "in": "path",
+            "description": "ID da notificação",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notificação marcada como lida."
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marcar notificação como lida",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/backup/create": {
+      "post": {
+        "operationId": "BackupController_createBackup",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Backup criado com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Criar um backup do banco de dados",
+        "tags": [
+          "backup"
+        ]
+      }
+    },
+    "/backup/list": {
+      "get": {
+        "operationId": "BackupController_listBackups",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lista de backups retornada com sucesso."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Listar todos os backups disponíveis",
+        "tags": [
+          "backup"
+        ]
+      }
+    },
+    "/backup/restore/{fileName}": {
+      "post": {
+        "operationId": "BackupController_restoreBackup",
+        "parameters": [
+          {
+            "name": "fileName",
+            "required": true,
+            "in": "path",
+            "description": "Nome do arquivo de backup (ex: backup_2023-01-01_12-00-00.sql)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Backup restaurado com sucesso."
+          },
+          "201": {
+            "description": ""
+          },
+          "404": {
+            "description": "Arquivo de backup não encontrado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Restaurar um backup do banco de dados",
+        "tags": [
+          "backup"
+        ]
+      }
     }
   },
   "info": {
     "title": "NestJS API",
-    "description": "API documentation for NestJS with Swagger, Orval, and MikroORM",
+    "description": "API documentation for NestJS with Swagger, Orval, and Kysely",
     "version": "1.0",
     "contact": {}
   },
@@ -1636,473 +1887,6 @@
         "required": [
           "orderId",
           "employeeCode"
-        ]
-      },
-      "Product": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "ID único do produto",
-            "example": 1
-          },
-          "code": {
-            "type": "string",
-            "description": "Código do produto",
-            "example": "PROD001"
-          },
-          "name": {
-            "type": "string",
-            "description": "Nome do produto",
-            "example": "Produto A"
-          },
-          "description": {
-            "type": "string",
-            "description": "Descrição do produto",
-            "example": "Descrição detalhada do produto"
-          },
-          "price": {
-            "type": "number",
-            "description": "Preço do produto",
-            "example": 99.99
-          },
-          "quantity": {
-            "type": "number",
-            "description": "Quantidade em estoque",
-            "example": 100
-          }
-        },
-        "required": [
-          "id",
-          "code",
-          "name",
-          "price",
-          "quantity"
-        ]
-      },
-      "Gestao": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "code": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "department": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          },
-          "auth": {
-            "$ref": "#/components/schemas/Auth"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "default": "2025-05-28T23:02:23.225Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "default": "2025-05-28T23:02:23.225Z"
-          }
-        },
-        "required": [
-          "id",
-          "code",
-          "name",
-          "department",
-          "role",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "Auth": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "code": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          },
-          "accessToken": {
-            "type": "string"
-          },
-          "tokenExpiresAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          },
-          "funcionario": {
-            "$ref": "#/components/schemas/Funcionario"
-          },
-          "gestao": {
-            "$ref": "#/components/schemas/Gestao"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "default": "2025-05-28T23:02:23.224Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "default": "2025-05-28T23:02:23.224Z"
-          }
-        },
-        "required": [
-          "id",
-          "code",
-          "password",
-          "role",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "Funcionario": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "code": {
-            "type": "string"
-          },
-          "nome": {
-            "type": "string"
-          },
-          "cargo": {
-            "type": "string"
-          },
-          "salario": {
-            "type": "number"
-          },
-          "password": {
-            "type": "string"
-          },
-          "auth": {
-            "$ref": "#/components/schemas/Auth"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "default": "2025-05-28T23:02:23.223Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "default": "2025-05-28T23:02:23.223Z"
-          }
-        },
-        "required": [
-          "id",
-          "code",
-          "nome",
-          "cargo",
-          "salario",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "Maquina": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "ID único da máquina",
-            "example": 1
-          },
-          "codigo": {
-            "type": "string",
-            "description": "Código da máquina",
-            "example": "MAQ-001"
-          },
-          "nome": {
-            "type": "string",
-            "description": "Nome da máquina",
-            "example": "Torno CNC"
-          },
-          "tipo": {
-            "type": "string",
-            "description": "Tipo da máquina",
-            "example": "Torno"
-          },
-          "modelo": {
-            "type": "string",
-            "description": "Modelo da máquina",
-            "example": "CNC-5000"
-          },
-          "fabricante": {
-            "type": "string",
-            "description": "Fabricante da máquina",
-            "example": "Romi"
-          },
-          "capacidade": {
-            "type": "string",
-            "description": "Capacidade da máquina",
-            "example": "500kg"
-          },
-          "status": {
-            "type": "string",
-            "default": "ativa",
-            "description": "Status da máquina",
-            "example": "ativa"
-          },
-          "ordens": {
-            "default": [],
-            "description": "Ordens de serviço associadas à máquina",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Order"
-            }
-          },
-          "created_at": {
-            "format": "date-time",
-            "type": "string",
-            "default": "2025-05-28T23:02:23.227Z",
-            "description": "Data de criação do registro",
-            "example": "2023-10-01T12:00:00Z"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string",
-            "default": "2025-05-28T23:02:23.227Z",
-            "description": "Data de atualização do registro",
-            "example": "2023-10-01T14:00:00Z"
-          }
-        },
-        "required": [
-          "id",
-          "codigo",
-          "nome",
-          "tipo",
-          "modelo",
-          "fabricante",
-          "status",
-          "ordens",
-          "created_at",
-          "updated_at"
-        ]
-      },
-      "OrderTracking": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "ID único do rastreamento",
-            "example": 1
-          },
-          "order": {
-            "description": "Pedido associado",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Order"
-              }
-            ]
-          },
-          "funcionarios": {
-            "description": "Funcionário responsável",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Funcionario"
-              }
-            ]
-          },
-          "startTime": {
-            "format": "date-time",
-            "type": "string",
-            "description": "Hora de início do rastreamento",
-            "example": "2023-10-01T12:00:00Z"
-          },
-          "endTime": {
-            "format": "date-time",
-            "type": "string",
-            "description": "Hora de término do rastreamento",
-            "example": "2023-10-01T14:00:00Z"
-          },
-          "lostQuantity": {
-            "type": "number",
-            "description": "Quantidade de peças perdidas",
-            "example": 5
-          },
-          "processedQuantity": {
-            "type": "number",
-            "description": "Quantidade de peças processadas",
-            "example": 100
-          }
-        },
-        "required": [
-          "id",
-          "order",
-          "funcionarios",
-          "startTime"
-        ]
-      },
-      "Etapa": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "ID único da etapa",
-            "example": 1
-          },
-          "nome": {
-            "type": "string",
-            "description": "Nome da etapa",
-            "example": "Corte"
-          },
-          "order": {
-            "description": "Pedido associado",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Order"
-              }
-            ]
-          },
-          "funcionario": {
-            "description": "Funcionário responsável",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Funcionario"
-              }
-            ]
-          },
-          "inicio": {
-            "format": "date-time",
-            "type": "string",
-            "description": "Horário de início da etapa",
-            "example": "2023-10-01T12:00:00Z"
-          },
-          "fim": {
-            "format": "date-time",
-            "type": "string",
-            "description": "Horário de término da etapa",
-            "example": "2023-10-01T14:00:00Z"
-          }
-        },
-        "required": [
-          "id",
-          "nome",
-          "order",
-          "funcionario"
-        ]
-      },
-      "Order": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "description": "ID único do pedido",
-            "example": 1
-          },
-          "orderNumber": {
-            "type": "string",
-            "description": "Número da Ordem de Pedido (OP)",
-            "example": "OP-12345"
-          },
-          "name": {
-            "type": "string",
-            "description": "Nome do pedido",
-            "example": "Pedido de cortes especiais"
-          },
-          "product": {
-            "description": "Produto associado",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Product"
-              }
-            ]
-          },
-          "funcionarioResposavel": {
-            "description": "Funcionário responsável",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Funcionario"
-              }
-            ]
-          },
-          "maquina": {
-            "description": "Máquina designada para o serviço",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Maquina"
-              }
-            ]
-          },
-          "lotQuantity": {
-            "type": "number",
-            "description": "Quantidade de peças no lote",
-            "example": 100
-          },
-          "finalDestination": {
-            "type": "string",
-            "description": "Destino final do lote",
-            "example": "Setor de Montagem"
-          },
-          "trackings": {
-            "default": [],
-            "description": "Rastreamentos do pedido",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderTracking"
-            }
-          },
-          "status": {
-            "type": "string",
-            "default": "aberto",
-            "description": "Status do pedido",
-            "example": "aberto"
-          },
-          "etapas": {
-            "default": [],
-            "description": "Etapas do pedido",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Etapa"
-            }
-          },
-          "created_at": {
-            "format": "date-time",
-            "type": "string",
-            "default": "2025-05-28T23:02:23.222Z",
-            "description": "Data de criação do pedido",
-            "example": "2023-10-01T12:00:00Z"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "type": "string",
-            "default": "2025-05-28T23:02:23.222Z",
-            "description": "Data de atualização do pedido",
-            "example": "2023-10-01T14:00:00Z"
-          }
-        },
-        "required": [
-          "id",
-          "orderNumber",
-          "name",
-          "product",
-          "funcionarioResposavel",
-          "lotQuantity",
-          "finalDestination",
-          "trackings",
-          "status",
-          "etapas",
-          "created_at",
-          "updated_at"
         ]
       },
       "CreateMotivoInterrupcaoDto": {

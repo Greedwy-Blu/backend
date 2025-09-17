@@ -1,12 +1,11 @@
-export class Gestao {
-  id!: number;
-  code!: string;
-  name!: string;
-  department!: string;
-  role!: string;
-  password?: string;
-  createdAt!: Date;
-  updatedAt!: Date;
+export interface Gestao {
+  id: number;
+  code: string;
+  name: string;
+  department: string;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 

@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { Order } from './entities/order.entity';
 import { OrderTracking } from './entities/order-tracking.entity';
+// Ajuste temporário: Permitir endTime ser Date | undefined
+type OrderTrackingWithOptionalEndTime = Omit<OrderTracking, 'endTime'> & { endTime?: Date };
 import { Funcionario } from '../colaborador/entities/funcionario.entity';
 import { Product } from '../produto/entities/produto.entity';
 import { Maquina } from '../maquina/entities/maquina.entity';
@@ -8,6 +10,7 @@ import { Etapa } from './entities/etapa.entity';
 import { HistoricoProducao } from './entities/historico-producao.entity';
 import { MotivoInterrupcao } from './entities/motivo-interrupcao.entity';
 import { db } from '../config/database.config';
+import { sql } from 'kysely';
 
 // DTOs
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -31,7 +34,47 @@ export class OrdersService {
    * Busca todas as ordens com seus relacionamentos
    */
   async findAll(): Promise<Order[]> {
-    return db.selectFrom('order').selectAll().execute();
+    const orders = await db.selectFrom('order')
+      .selectAll('order')
+      .leftJoin('product', 'product.id', 'order.productId')
+      .leftJoin('funcionario', 'funcionario.id', 'order.funcionarioResposavelId')
+      .leftJoin('maquina', 'maquina.id', 'order.maquinaId')
+      .select(eb => [
+        sql<Product>`json_build_object(
+          'id', product.id,
+          'name', product.name,
+          'code', product.code
+        )`.as('product'),
+        sql<Funcionario>`json_build_object(
+          'id', funcionario.id,
+          'name', funcionario.name,
+          'code', funcionario.code
+        )`.as('funcionarioResposavel'),
+        sql<Maquina>`json_build_object(
+          'id', maquina.id,
+          'nome', maquina.nome,
+          'codigo', maquina.codigo,
+          'tipo', maquina.tipo
+        )`.as('maquina'),
+      ])
+      .execute();
+
+    return orders.map(row => ({
+      id: row.id,
+      name: row.name,
+      status: row.status,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      orderNumber: row.orderNumber,
+      lotQuantity: row.lotQuantity,
+      finalDestination: row.finalDestination,
+      productId: row.productId,
+      funcionarioResposavelId: row.funcionarioResposavelId,
+      maquinaId: row.maquinaId,
+      product: row.product || undefined,
+      funcionarioResposavel: row.funcionarioResposavel || undefined,
+      maquina: row.maquina || undefined,
+    }));
   }
 
   /**
@@ -39,11 +82,52 @@ export class OrdersService {
    * @throws NotFoundException se a ordem não for encontrada
    */
   async findOne(id: number): Promise<Order> {
-    const order = await db.selectFrom('order').selectAll().where('id', '=', id).executeTakeFirst();
+    const order = await db.selectFrom('order')
+      .selectAll('order')
+      .leftJoin('product', 'product.id', 'order.productId')
+      .leftJoin('funcionario', 'funcionario.id', 'order.funcionarioResposavelId')
+      .leftJoin('maquina', 'maquina.id', 'order.maquinaId')
+      .select(eb => [
+        sql<Product>`json_build_object(
+          'id', product.id,
+          'name', product.name,
+          'code', product.code
+        )`.as('product'),
+        sql<Funcionario>`json_build_object(
+          'id', funcionario.id,
+          'name', funcionario.name,
+          'code', funcionario.code
+        )`.as('funcionarioResposavel'),
+        sql<Maquina>`json_build_object(
+          'id', maquina.id,
+          'nome', maquina.nome,
+          'codigo', maquina.codigo,
+          'tipo', maquina.tipo
+        )`.as('maquina'),
+      ])
+      .where('order.id', '=', id)
+      .executeTakeFirst();
+
     if (!order) {
       throw new NotFoundException(`Pedido com ID ${id} não encontrado.`);
     }
-    return order;
+
+    return {
+      id: order.id,
+      name: order.name,
+      status: order.status,
+      created_at: order.created_at,
+      updated_at: order.updated_at,
+      orderNumber: order.orderNumber,
+      lotQuantity: order.lotQuantity,
+      finalDestination: order.finalDestination,
+      productId: order.productId,
+      funcionarioResposavelId: order.funcionarioResposavelId,
+      maquinaId: order.maquinaId,
+      product: order.product || undefined,
+      funcionarioResposavel: order.funcionarioResposavel || undefined,
+      maquina: order.maquina || undefined,
+    };
   }
 
   /**
@@ -98,14 +182,11 @@ export class OrdersService {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    return newOrder;
+    return newOrder as unknown as Order;
   }
 
-  /**
-   * Inicia o rastreamento de uma ordem
-   * @throws NotFoundException se ordem ou funcionário não forem encontrados
-   */
-  async startTracking(trackOrderDto: TrackOrderDto): Promise<OrderTracking> {
+  // Inicia o rastreamento de uma ordem
+  async startTracking(trackOrderDto: TrackOrderDto): Promise<OrderTrackingWithOptionalEndTime> {
     const order = await db.selectFrom('order').selectAll().where('id', '=', trackOrderDto.orderId).executeTakeFirst();
     const funcionario = await db.selectFrom('funcionario').selectAll().where('code', '=', trackOrderDto.employeeCode).executeTakeFirst();
 
@@ -128,8 +209,9 @@ export class OrdersService {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    return newTracking;
+    return newTracking as OrderTrackingWithOptionalEndTime;
   }
+  
 
   /**
    * Finaliza o rastreamento de uma ordem
@@ -147,7 +229,10 @@ export class OrdersService {
       throw new BadRequestException('Quantidade perdida não pode ser negativa.');
     }
 
-    const tracking = await db.selectFrom('order_tracking').selectAll().where('id', '=', trackingId).executeTakeFirst();
+    const tracking = await db.selectFrom('order_tracking')
+      .selectAll()
+      .where('id', '=', trackingId)
+      .executeTakeFirst();
     
     if (!tracking) {
       throw new NotFoundException(`Rastreamento com ID ${trackingId} não encontrado.`);
@@ -163,7 +248,11 @@ export class OrdersService {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    return updatedTracking;
+    if (!updatedTracking.endTime) {
+      updatedTracking.endTime = new Date();
+    }
+
+    return updatedTracking as OrderTracking;
   }
 
   /**
@@ -248,7 +337,8 @@ export class OrdersService {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    return newEtapa;
+    // Ensure types match: cast to Etapa if needed
+    return newEtapa as Etapa;
   }
 
   /**
@@ -272,7 +362,7 @@ export class OrdersService {
       .returningAll()
       .executeTakeFirstOrThrow();
     
-    return updatedEtapa;
+    return updatedEtapa as Etapa;
   }
 
   /**
@@ -300,7 +390,7 @@ export class OrdersService {
       .returningAll()
       .executeTakeFirstOrThrow();
    
-    return updatedEtapa;
+    return updatedEtapa as Etapa;
   }
 
   /**
@@ -314,13 +404,16 @@ export class OrdersService {
       throw new NotFoundException(`Ordem com ID ${orderId} não encontrada.`);
     }
 
-    return db.selectFrom('etapa').selectAll().where('orderId', '=', orderId).execute();
+    const etapas = await db.selectFrom('etapa').selectAll().where('orderId', '=', orderId).execute();
+    return etapas.map(etapa => ({
+      ...etapa,
+      inicio: etapa.inicio ?? new Date(0),
+      fim: etapa.fim ?? new Date(0),
+    })) as Etapa[];
   }
 
   /**
    * Atualiza o status de um pedido com validações
-   * @throws NotFoundException se pedido ou motivo não forem encontrados
-   * @throws BadRequestException para transições de status inválidas
    */
   async atualizarStatusPedido(
     pedidoId: number, 
@@ -335,7 +428,12 @@ export class OrdersService {
       throw new NotFoundException(`Pedido com ID ${pedidoId} não encontrado.`);
     }
 
-    const etapas = await db.selectFrom('etapa').selectAll().where('orderId', '=', pedidoId).execute();
+    const etapasRaw = await db.selectFrom('etapa').selectAll().where('orderId', '=', pedidoId).execute();
+    const etapas: Etapa[] = etapasRaw.map(etapa => ({
+      ...etapa,
+      inicio: etapa.inicio ?? new Date(0),
+      fim: etapa.fim ?? new Date(0),
+    }));
 
     this.validateStatusTransition(
       pedido.status as OrderStatus,
@@ -357,8 +455,8 @@ export class OrdersService {
       const funcionarioResposavel = await db.selectFrom('funcionario').selectAll().where('id', '=', pedido.funcionarioResposavelId).executeTakeFirstOrThrow();
 
       await this.registrarHistorico(
-        pedido,
-        funcionarioResposavel,
+        pedido as unknown as Order,
+        funcionarioResposavel as unknown as Funcionario,
         'Pedido interrompido',
         `Motivo: ${motivo.descricao}`,
         motivo
@@ -374,7 +472,7 @@ export class OrdersService {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    return updatedPedido;
+    return updatedPedido as unknown as Order;
   }
 
   /**
@@ -422,14 +520,23 @@ export class OrdersService {
         orderId: pedido.id,
         funcionarioId: funcionario.id,
         acao,
-        detalhes,
+        detalhes: detalhes ?? '',
         motivoInterrupcaoId: motivo?.id,
         data_hora: new Date(),
       })
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    return newHistorico;
+    // Garantir que 'detalhes' nunca seja undefined
+    if (typeof newHistorico.detalhes === 'undefined') {
+      newHistorico.detalhes = '';
+    }
+
+    // Força o tipo para HistoricoProducao e garante que detalhes é string
+    return {
+      ...newHistorico,
+      detalhes: newHistorico.detalhes ?? '',
+    } as HistoricoProducao;
   }
 
   /**
@@ -485,7 +592,10 @@ export class OrdersService {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    return newHistorico;
+    return {
+      ...newHistorico,
+      detalhes: newHistorico.detalhes ?? '',
+    } as HistoricoProducao;
   }
 
   /**
@@ -495,7 +605,11 @@ export class OrdersService {
     id: number,
     updateMotivoInterrupcaoDto: UpdateMotivoInterrupcaoDto
   ): Promise<MotivoInterrupcao> {
-    const motivo = await db.selectFrom('motivo_interrupcao').selectAll().where('id', '=', id).executeTakeFirst();
+    const motivo = await db.selectFrom('motivo_interrupcao')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirst();
+
     if (!motivo) {
       throw new NotFoundException(`Motivo de interrupção com ID ${id} não encontrado.`);
     }
@@ -505,49 +619,46 @@ export class OrdersService {
       .where('id', '=', id)
       .returningAll()
       .executeTakeFirstOrThrow();
+
     return updatedMotivo;
   }
 
   /**
-   * Remove um motivo de interrupção
+   * Deleta um motivo de interrupção existente
    */
-  async removeMotivoInterrupcao(id: number): Promise<void> {
-    const { numDeletedRows } = await db.deleteFrom('motivo_interrupcao').where('id', '=', id).executeTakeFirstOrThrow();
-    if (Number(numDeletedRows) === 0) {
-      throw new NotFoundException(`Motivo de interrupção com ID ${id} não encontrado.`);
-    }
-  }
-
-  /**
-   * Busca um motivo de interrupção pelo ID
-   */
-  async findMotivoInterrupcaoById(id: number): Promise<MotivoInterrupcao> {
+  async deleteMotivoInterrupcao(id: number): Promise<void> {
     const motivo = await db.selectFrom('motivo_interrupcao').selectAll().where('id', '=', id).executeTakeFirst();
+
     if (!motivo) {
       throw new NotFoundException(`Motivo de interrupção com ID ${id} não encontrado.`);
     }
-    return motivo;
+
+    await db.deleteFrom('motivo_interrupcao').where('id', '=', id).execute();
   }
 
   /**
    * Busca um histórico de produção pelo ID
    */
-  async findHistoricoProducaoById(id: number): Promise<HistoricoProducao> {
+  async findHistoricoProducao(id: number): Promise<HistoricoProducao> {
     const historico = await db.selectFrom('historico_producao').selectAll().where('id', '=', id).executeTakeFirst();
     if (!historico) {
       throw new NotFoundException(`Histórico de produção com ID ${id} não encontrado.`);
     }
-    return historico;
+    return {
+      ...historico,
+      detalhes: historico.detalhes ?? '',
+    } as HistoricoProducao;
   }
 
   /**
-   * Atualiza um histórico de produção existente
+   * Atualiza um registro de histórico de produção existente
    */
   async updateHistoricoProducao(
     id: number,
     updateHistoricoProducaoDto: UpdateHistoricoProducaoDto
   ): Promise<HistoricoProducao> {
     const historico = await db.selectFrom('historico_producao').selectAll().where('id', '=', id).executeTakeFirst();
+
     if (!historico) {
       throw new NotFoundException(`Histórico de produção com ID ${id} não encontrado.`);
     }
@@ -557,33 +668,26 @@ export class OrdersService {
       .where('id', '=', id)
       .returningAll()
       .executeTakeFirstOrThrow();
-    return updatedHistorico;
+
+    return {
+      ...updatedHistorico,
+      detalhes: updatedHistorico.detalhes ?? '',
+    } as HistoricoProducao;
   }
 
   /**
-   * Remove um histórico de produção
+   * Deleta um registro de histórico de produção existente
    */
-  async removeHistoricoProducao(id: number): Promise<void> {
-    const { numDeletedRows } = await db.deleteFrom('historico_producao').where('id', '=', id).executeTakeFirstOrThrow();
-    if (Number(numDeletedRows) === 0) {
+  async deleteHistoricoProducao(id: number): Promise<void> {
+    const historico = await db.selectFrom('historico_producao').selectAll().where('id', '=', id).executeTakeFirst();
+
+    if (!historico) {
       throw new NotFoundException(`Histórico de produção com ID ${id} não encontrado.`);
     }
+
+    await db.deleteFrom('historico_producao').where('id', '=', id).execute();
   }
 
-  /**
-   * Lista todos os rastreamentos de uma ordem
-   */
-  async listRastreamentosByOrder(orderId: number): Promise<OrderTracking[]> {
-    const order = await db.selectFrom('order').selectAll().where('id', '=', orderId).executeTakeFirst();
-    if (!order) {
-      throw new NotFoundException(`Ordem com ID ${orderId} não encontrada.`);
-    }
-    return db.selectFrom('order_tracking').selectAll().where('orderId', '=', orderId).execute();
-  }
-
-  /**
-   * Valida o status fornecido
-   */
   private validarStatus(status: string): OrderStatus {
     if (!VALID_STATUSES.includes(status as OrderStatus)) {
       throw new BadRequestException(`Status inválido: ${status}. Status permitidos: ${VALID_STATUSES.join(', ')}`);
@@ -591,12 +695,17 @@ export class OrdersService {
     return status as OrderStatus;
   }
 
-  /**
-   * Calcula a duração entre duas datas em minutos
-   */
-  private calculateDuration(start: Date, end: Date): number {
-    return Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+  private calculateDuration(startTime: Date, endTime: Date): string {
+    const durationMs = endTime.getTime() - startTime.getTime();
+    const hours = Math.floor(durationMs / (1000 * 60 * 60));
+    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
+    return `${hours}h ${minutes}m ${seconds}s`;
   }
 }
+
+
+
+
 
 

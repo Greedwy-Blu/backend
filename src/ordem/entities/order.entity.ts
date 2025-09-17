@@ -1,38 +1,56 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { Product } from '../../produto/entities/produto.entity';
+import { Funcionario } from '../../colaborador/entities/funcionario.entity';
+import { Maquina } from '../../maquina/entities/maquina.entity';
 
-export class Order {
-  @ApiProperty({ description: 'ID único do pedido', example: 1 })
-  id!: number;
-
-  @ApiProperty({ description: 'Número da Ordem de Pedido (OP)', example: 'OP-12345' })
-  orderNumber!: string;
-
-  @ApiProperty({ description: 'Nome do pedido', example: 'Pedido de cortes especiais' })
-  name!: string;
-
-  // Foreign key to Product
-  productId!: number;
-
-  // Foreign key to Funcionario
-  funcionarioResposavelId!: number;
-
-  // Foreign key to Maquina
+export interface Order {
+  id: number;
+  name: string;
+  status: string;
+  created_at: Date;
+  updated_at: Date;
+  orderNumber: string;
+  lotQuantity: number;
+  finalDestination: string;
+  productId: number;
+  funcionarioResposavelId: number;
   maquinaId?: number;
+  product?: Product;
+  funcionarioResposavel?: Funcionario;
+  maquina?: Maquina;
+}
 
-  @ApiProperty({ description: 'Quantidade de peças no lote', example: 100 })
-  lotQuantity!: number;
+export interface OrderTracking {
+  id: number;
+  orderId: number;
+  funcionarioId: number;
+  startTime: Date;
+  endTime?: Date;
+  processedQuantity?: number;
+  lostQuantity?: number;
+}
 
-  @ApiProperty({ description: 'Destino final do lote', example: 'Setor de Montagem' })
-  finalDestination!: string;
+export interface Etapa {
+  id: number;
+  nome: string;
+  orderId: number;
+  funcionarioId: number;
+  inicio?: Date;
+  fim?: Date;
+}
 
-  @ApiProperty({ description: 'Status do pedido', example: 'aberto' })
-  status: string = 'aberto';
+export interface HistoricoProducao {
+  id: number;
+  orderId: number;
+  funcionarioId: number;
+  acao: string;
+  detalhes?: string;
+  motivoInterrupcaoId?: number;
+  data_hora: Date;
+}
 
-  @ApiProperty({ description: 'Data de criação do pedido', example: '2023-10-01T12:00:00Z' })
-  created_at!: Date;
-
-  @ApiProperty({ description: 'Data de atualização do pedido', example: '2023-10-01T14:00:00Z' })
-  updated_at!: Date;
+export interface MotivoInterrupcao {
+  id: number;
+  descricao: string;
 }
 
 

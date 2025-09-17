@@ -278,7 +278,7 @@ export class OrdersController {
   })
   @ApiResponse({ status: 404, description: 'Pedido não encontrado.' })
   async listHistoricoProducao(@Param('id') id: number, @Request() req) {
-    const historico = await this.ordersService.findHistoricoProducaoById(id);
+    const historico = await this.ordersService.findHistoricoProducao(id);
     if (!historico) {
       throw new NotFoundException('Pedido não encontrado.');
     }
