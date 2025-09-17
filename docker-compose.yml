@@ -1,0 +1,116 @@
+# docker-compose.yml
+services:
+  # 1. Serviço do Banco de Dados PostgreSQL
+  db:
+    image: postgres
+    container_name: ${POSTGRES_NAME:-solarium}
+    restart: unless-stopped
+    shm_size: 128mb # Tamanho de memória compartilhada recomendado para Postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${DB_PORT:-5435}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # - ./init-scripts:/docker-entrypoint-initdb.d # Descomente se tiver scripts de inicialização
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # 2. Serviço da Aplicação Backend (Ex: NestJS)
+  backend:
+    build:
+      dockerfile: Dockerfile
+    container_name: nestjs_backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      # Ambiente
+      - NODE_ENV=production
+      - DOCKER_ENV=true
+      - PORT=${PORT}
+      - JWT_SECRET=${JWT_SECRET}
+
+      # Conexão com o Banco de Dados (aponta para o serviço 'db')
+      - DB_HOST=db
+      - DB_PORT=5435
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      
+      # Conexão com o Redis (aponta para o serviço 'redis')
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+      # Pool de Conexões
+      - DB_POOL_MAX=${DB_POOL_MAX}
+      - DB_POOL_MIN=${DB_POOL_MIN}
+      - DB_IDLE_TIMEOUT=${DB_IDLE_TIMEOUT}
+      - DB_CONNECTION_TIMEOUT=${DB_CONNECTION_TIMEOUT}
+    depends_on:
+      db:
+        condition: service_healthy # Garante que o backend só inicie após o DB estar saudável
+      redis:
+        condition: service_healthy # Garante que o backend só inicie após o Redis estar saudável
+    networks:
+      - app-network
+    volumes:
+      - ./logs:/app/logs # Mapeia a pasta de logs para a máquina local
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"] # Adapte a rota se necessário
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 3. Serviço de Gerenciamento do Banco de Dados (Adminer)
+  adminer:
+    image: adminer:latest
+    container_name: adminer_ui
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db # Conecta-se automaticamente ao serviço 'db'
+      ADMINER_DESIGN: pepa-linha
+    networks:
+      - app-network
+    depends_on:
+      - db
+
+  # 4. Serviço de Cache (Redis)
+  redis:
+    image: redis
+    container_name: redis_cache
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+# Volumes para persistência de dados
+volumes:
+  db_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# Rede para comunicação entre os containers
+networks:
+  app-network:
+    driver: bridge

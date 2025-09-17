@@ -9,20 +9,29 @@ export class NotificationsService {
   async sendNotification(recipientId: number, message: string, type: string): Promise<Notification> {
     const newNotification = await db.insertInto('notification')
       .values({
-        recipientId,
+        userId: recipientId,
         message,
-        type,
         read: false,
         createdAt: new Date(),
+        updatedAt: new Date(),
       })
       .returningAll()
       .executeTakeFirstOrThrow();
-    return newNotification;
+    return {...newNotification, recipientId,type};
   }
 
   async getNotificationsByUserId(userId: number): Promise<Notification[]> {
-    return db.selectFrom('notification').selectAll().where('recipientId', '=', userId).execute();
-  }
+    const rawLogs = await db.selectFrom('notification').selectAll().where('id', '=', userId).execute();
+     
+    const notifications: Notification[] = rawLogs.map(log => {
+        return {
+            ...log,
+            recipientId: log.userId, 
+            type: '' 
+        };
+    },);
+
+    return  notifications }
 
   async markAsRead(notificationId: number): Promise<Notification> {
     const notification = await db.selectFrom('notification').selectAll().where('id', '=', notificationId).executeTakeFirst();
@@ -35,7 +44,11 @@ export class NotificationsService {
       .where('id', '=', notificationId)
       .returningAll()
       .executeTakeFirstOrThrow();
-    return updatedNotification;
+    return {
+      ...updatedNotification,
+      recipientId: updatedNotification.userId,
+      type: '', // Set the appropriate type if available
+    };
   }
 
   async sendAlert(orderId: number, message: string): Promise<void> {

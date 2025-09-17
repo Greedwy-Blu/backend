@@ -128,13 +128,7 @@ interface NotificationTable {
   updatedAt: Date;
 }
 
-interface BackupTable {
-  id: Generated<number>;
-  filename: string;
-  path: string;
-  size: number;
-  createdAt: Date;
-}
+
 
 interface AuditTable {
   id: Generated<number>;
@@ -159,7 +153,7 @@ interface Database {
   sector: SectorTable;
   sector_config: SectorConfigTable;
   notification: NotificationTable;
-  backup: BackupTable;
+  
   audit: AuditTable;
 }
 

@@ -26,10 +26,7 @@ export class FuncionarioService {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    // Note: The password is not stored directly in the funcionario table in the Kysely schema.
-    // It's handled by the Auth table. So, we don't include it here.
-    // If the intention was to store it in funcionario, the schema would need adjustment.
-
+   
     return newFuncionario;
   }
 
