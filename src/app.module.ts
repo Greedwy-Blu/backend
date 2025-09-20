@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -14,14 +14,16 @@ import { ReportsModule } from './reports/reports.module';
 import { AuditModule } from './audit/audit.module';
 import { NotificationsModule } from './notification/notifications.module';
 import { BackupModule } from './backup/backup.module';
+import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
+import { WebSocketModule } from './websocket/websocket.module';
+import { EmailModule } from './email/email.module';
 
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    // Não há necessidade de importar MikroOrmModule aqui, pois Kysely é usado diretamente nos serviços
-
+    
     // Importe os módulos personalizados
     OrdersModule,
     FuncionarioModule,
@@ -32,8 +34,8 @@ import { ConfigModule } from '@nestjs/config';
     MaquinaModule,
     ReportsModule,
     AuditModule,
-    NotificationsModule,
     BackupModule,
+    WebSocketModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -11,6 +11,7 @@ import { HistoricoProducao } from './entities/historico-producao.entity';
 import { MotivoInterrupcao } from './entities/motivo-interrupcao.entity';
 import { db } from '../config/database.config';
 import { sql } from 'kysely';
+import { NotificationProducer } from '../rabbitmq/notification.producer';
 
 // DTOs
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -28,7 +29,7 @@ const VALID_STATUSES: OrderStatus[] = ['aberto', 'em_andamento', 'interrompido',
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
-  constructor() {}
+  constructor(private readonly notificationProducer: NotificationProducer) {}
 
   /**
    * Busca todas as ordens com seus relacionamentos
@@ -182,6 +183,20 @@ export class OrdersService {
       .returningAll()
       .executeTakeFirstOrThrow();
 
+    // Envia evento de criação da ordem
+    await this.notificationProducer.sendOrderEvent({
+      orderId: newOrder.id,
+      eventType: 'created',
+      funcionarioId: funcionario.id,
+      details: {
+        orderNumber: newOrder.orderNumber,
+        productCode: createOrderDto.productCode,
+        employeeCode: createOrderDto.employeeCode,
+        lotQuantity: createOrderDto.lotQuantity,
+        finalDestination: createOrderDto.finalDestination,
+      },
+    });
+
     return newOrder as unknown as Order;
   }
 
@@ -208,6 +223,18 @@ export class OrdersService {
       })
       .returningAll()
       .executeTakeFirstOrThrow();
+
+    // Envia evento de início da produção
+    await this.notificationProducer.sendOrderEvent({
+      orderId: order.id,
+      eventType: 'started',
+      funcionarioId: funcionario.id,
+      details: {
+        orderNumber: order.orderNumber,
+        trackingId: newTracking.id,
+        employeeCode: trackOrderDto.employeeCode,
+      },
+    });
 
     return newTracking as OrderTrackingWithOptionalEndTime;
   }
@@ -250,6 +277,25 @@ export class OrdersService {
 
     if (!updatedTracking.endTime) {
       updatedTracking.endTime = new Date();
+    }
+
+    // Busca informações da ordem para o evento
+    const order = await db.selectFrom('order').selectAll().where('id', '=', tracking.orderId).executeTakeFirst();
+    
+    if (order) {
+      // Envia evento de finalização da produção
+      await this.notificationProducer.sendOrderEvent({
+        orderId: order.id,
+        eventType: 'completed',
+        funcionarioId: tracking.funcionarioId,
+        details: {
+          orderNumber: order.orderNumber,
+          trackingId: updatedTracking.id,
+          processedQuantity: trackOrderDto.processedQuantity,
+          lostQuantity: trackOrderDto.lostQuantity,
+          duration: this.calculateDuration(tracking.startTime, updatedTracking.endTime),
+        },
+      });
     }
 
     return updatedTracking as OrderTracking;
@@ -471,6 +517,46 @@ export class OrdersService {
       .where('id', '=', pedidoId)
       .returningAll()
       .executeTakeFirstOrThrow();
+
+    // Envia evento baseado no novo status
+    const eventTypeMap = {
+      'em_andamento': 'started' as const,
+      'interrompido': 'interrupted' as const,
+      'finalizado': 'completed' as const,
+    };
+
+    const eventType = eventTypeMap[statusValidado];
+    if (eventType) {
+      await this.notificationProducer.sendOrderEvent({
+        orderId: updatedPedido.id,
+        eventType,
+        funcionarioId: updatedPedido.funcionarioResposavelId,
+        details: {
+          orderNumber: updatedPedido.orderNumber,
+          previousStatus: pedido.status,
+          newStatus: statusValidado,
+          motivoId: motivoId,
+        },
+      });
+
+      // Envia alerta para interrupções
+      if (statusValidado === 'interrompido') {
+        const motivo = await db.selectFrom('motivo_interrupcao').selectAll().where('id', '=', motivoId!).executeTakeFirst();
+        
+        await this.notificationProducer.sendAlert({
+          orderId: updatedPedido.id,
+          alertType: 'custom',
+          severity: 'warning',
+          message: `Ordem ${updatedPedido.orderNumber} foi interrompida. Motivo: ${motivo?.descricao || 'Não especificado'}`,
+          recipientIds: [updatedPedido.funcionarioResposavelId],
+          metadata: {
+            orderNumber: updatedPedido.orderNumber,
+            motivoId: motivoId,
+            motivoDescricao: motivo?.descricao,
+          },
+        });
+      }
+    }
 
     return updatedPedido as unknown as Order;
   }

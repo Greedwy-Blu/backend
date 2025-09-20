@@ -4,8 +4,24 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { writeFileSync } from 'fs';
 import { Logger } from '@nestjs/common';
-
+import { FileMigrationProvider, Migration, Migrator } from 'kysely';
+import * as path from 'path';
+import { promises as fs } from 'fs'
+import { db } from './config/database.config';
 async function bootstrap() {
+
+
+ // Banco de dados e migrações
+ 
+  const migrator = new Migrator({
+    db,
+    provider: new FileMigrationProvider({
+      fs,
+      path,
+      migrationFolder: path.join(__dirname, '../migrations/kysely/intial_migration'),
+    }),
+  }) 
+  await migrator.migrateToLatest();
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
@@ -15,7 +31,6 @@ async function bootstrap() {
       'http://localhost:8081', // React Native/Expo
       'http://localhost:3000', // Seu próprio backend
       'exp://localhost:19000', // Expo Go
-      /\.yourdomain\.com$/, // Regex para subdomínios em produção
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: [

@@ -1,4 +1,5 @@
 # docker-compose.yml
+# docker-compose.yml
 services:
   # 1. Serviço do Banco de Dados PostgreSQL
   db:
@@ -46,9 +47,11 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       
-      # Conexão com o Redis (aponta para o serviço 'redis')
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      # Conexão com o RabbitMQ (aponta para o serviço 'rabbitmq')
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
 
       # Pool de Conexões
       - DB_POOL_MAX=${DB_POOL_MAX}
@@ -58,8 +61,8 @@ services:
     depends_on:
       db:
         condition: service_healthy # Garante que o backend só inicie após o DB estar saudável
-      redis:
-        condition: service_healthy # Garante que o backend só inicie após o Redis estar saudável
+      rabbitmq:
+        condition: service_healthy # Garante que o backend só inicie após o RabbitMQ estar saudável
     networks:
       - app-network
     volumes:
@@ -86,31 +89,36 @@ services:
     depends_on:
       - db
 
-  # 4. Serviço de Cache (Redis)
-  redis:
-    image: redis
-    container_name: redis_cache
+  # 4. Serviço de Fila e Notificação (RabbitMQ)
+  rabbitmq:
+    image: rabbitmq
+    container_name: rabbitmq_server
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "5672:5672" # Porta para comunicação AMQP
+      - "15672:15672" # Porta para a interface de gerenciamento
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     volumes:
-      - redis_data:/data
+      - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
       retries: 3
 
 # Volumes para persistência de dados
 volumes:
   db_data:
     driver: local
-  redis_data:
+  rabbitmq_data:
     driver: local
 
 # Rede para comunicação entre os containers
 networks:
   app-network:
     driver: bridge
+
