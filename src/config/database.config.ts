@@ -160,11 +160,13 @@ interface Database {
 export const db = new Kysely<Database>({
   dialect: new PostgresDialect({
     pool: new Pool({
-      database: process.env.POSTGRES_DB,
-    host: process.env.DB_HOST,
-    user:  process.env.POSTGRES_USER,
-    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5432,
+      database: 'pontamento_db',
+    host: 'localhost',
+    user: 'user_erp',
+    password: 'erp_pg_gestao',
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5434,
     max: process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX) : 20,
+
     }),
   }),
 });

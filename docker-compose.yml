@@ -91,7 +91,7 @@ services:
 
   # 4. Serviço de Fila e Notificação (RabbitMQ)
   rabbitmq:
-    image: rabbitmq
+    image: rabbitmq:4-management
     container_name: rabbitmq_server
     restart: unless-stopped
     ports:

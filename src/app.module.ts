@@ -16,7 +16,6 @@ import { NotificationsModule } from './notification/notifications.module';
 import { BackupModule } from './backup/backup.module';
 import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
 import { WebSocketModule } from './websocket/websocket.module';
-import { EmailModule } from './email/email.module';
 
 import { ConfigModule } from '@nestjs/config';
 
